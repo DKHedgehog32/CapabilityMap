@@ -1,0 +1,57 @@
+<template>
+    <div class="sidebar-container slds-p-around_small">
+        <!-- Search -->
+        <lightning-input 
+            type="search" 
+            label="Search Capabilities" 
+            placeholder="Search..."
+            value={searchTerm}
+            onchange={handleSearchChange}>
+        </lightning-input>
+
+        <!-- Filters -->
+        <div class="slds-m-top_medium">
+            <lightning-combobox
+                label="Filter by Phase"
+                value={selectedPhase}
+                options={phaseOptions}
+                onchange={handlePhaseChange}>
+            </lightning-combobox>
+        </div>
+
+        <div class="slds-m-top_small">
+            <lightning-combobox
+                label="Filter by Size"
+                value={selectedSize}
+                options={sizeOptions}
+                onchange={handleSizeChange}>
+            </lightning-combobox>
+        </div>
+
+        <!-- Size Legend -->
+        <div class="slds-m-top_large">
+            <h3 class="slds-text-title_caps slds-m-bottom_small">Size Legend</h3>
+            <div class="size-legend">
+                <template for:each={sizeLegend} for:item="item">
+                    <div key={item.size} class="legend-item">
+                        <span class="legend-color" style={item.style}></span>
+                        <span class="legend-label">{item.size}</span>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="slds-m-top_large">
+            <h3 class="slds-text-title_caps slds-m-bottom_small">Statistics</h3>
+            <dl class="slds-dl_horizontal">
+                <dt class="slds-dl_horizontal__label">Categories:</dt>
+                <dd class="slds-dl_horizontal__detail">{statistics.totalCategories}</dd>
+                <dt class="slds-dl_horizontal__label">Capabilities:</dt>
+                <dd class="slds-dl_horizontal__detail">{statistics.totalCapabilities}</dd>
+                <dt class="slds-dl_horizontal__label">Total Hours:</dt>
+                <dd class="slds-dl_horizontal__detail">{statistics.totalHours}</dd>
+            </dl>
+        </div>
+    </div>
+</template>

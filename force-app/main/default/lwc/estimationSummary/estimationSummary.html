@@ -1,0 +1,14 @@
+<template>
+    <lightning-card title="Estimation Summary" icon-name="utility:calculator">
+        <div class="slds-p-around_small">
+            <div class="slds-text-heading_medium">Total: {totalHours} hours</div>
+            <h3 class="slds-text-title_caps slds-m-top_medium">By Phase</h3>
+            <template for:each={hoursByPhase} for:item="item">
+                <div key={item.phase} class="slds-grid slds-p-vertical_xx-small">
+                    <span class="slds-col slds-grow">{item.phase}</span>
+                    <span class="slds-col">{item.hours}h</span>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

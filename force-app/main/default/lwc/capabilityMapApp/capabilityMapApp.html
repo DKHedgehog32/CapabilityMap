@@ -1,0 +1,107 @@
+<template>
+    <lightning-card title="Capability Map Tool" icon-name="custom:custom63">
+        <!-- Header with Project Selector -->
+        <div slot="actions">
+            <c-project-selector onprojectselected={handleProjectSelected}></c-project-selector>
+        </div>
+
+        <div class="slds-p-around_medium">
+            <!-- Loading Spinner -->
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+            </template>
+
+            <!-- No Project Selected -->
+            <template if:false={selectedProjectId}>
+                <div class="slds-text-align_center slds-p-around_large">
+                    <lightning-icon icon-name="utility:info" size="large"></lightning-icon>
+                    <p class="slds-text-heading_medium slds-m-top_medium">Select a Klient Project to get started</p>
+                </div>
+            </template>
+
+            <!-- Project Selected but No Map -->
+            <template if:true={selectedProjectId}>
+                <template if:false={hasMap}>
+                    <div class="slds-text-align_center slds-p-around_large">
+                        <lightning-icon icon-name="utility:new" size="large"></lightning-icon>
+                        <p class="slds-text-heading_medium slds-m-top_medium">No capability map exists for this project</p>
+                        <lightning-button 
+                            variant="brand" 
+                            label="Create Capability Map" 
+                            onclick={handleCreateMap}
+                            class="slds-m-top_medium">
+                        </lightning-button>
+                    </div>
+                </template>
+
+                <!-- Map Exists -->
+                <template if:true={hasMap}>
+                    <!-- Toolbar -->
+                    <div class="slds-grid slds-gutters slds-m-bottom_medium">
+                        <div class="slds-col">
+                            <lightning-button-group>
+                                <lightning-button label="Save" icon-name="utility:save" onclick={handleSave}></lightning-button>
+                                <lightning-button label="Templates" icon-name="utility:layout" onclick={handleOpenTemplates}></lightning-button>
+                                <lightning-button label="Hours Config" icon-name="utility:clock" onclick={handleOpenHoursConfig}></lightning-button>
+                            </lightning-button-group>
+                        </div>
+                        <div class="slds-col slds-text-align_right">
+                            <template if:true={hasUnsavedChanges}>
+                                <lightning-badge label="Unsaved Changes" class="slds-theme_warning"></lightning-badge>
+                            </template>
+                            <c-map-lifecycle-controls 
+                                map-id={capabilityMap.Id}
+                                onmapcleared={handleMapCleared}
+                                onmapdeleted={handleMapDeleted}>
+                            </c-map-lifecycle-controls>
+                        </div>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="slds-grid slds-gutters">
+                        <!-- Sidebar -->
+                        <div class="slds-col slds-size_3-of-12">
+                            <c-capability-map-sidebar 
+                                map-id={capabilityMap.Id}
+                                categories={categories}
+                                capabilities={capabilities}
+                                roles={roles}>
+                            </c-capability-map-sidebar>
+                        </div>
+                        
+                        <!-- Canvas -->
+                        <div class="slds-col slds-size_9-of-12">
+                            <c-capability-map-canvas
+                                map-id={capabilityMap.Id}
+                                categories={categories}
+                                capabilities={capabilities}
+                                roles={roles}
+                                role-assignments={roleAssignments}
+                                ondatachanged={handleDataChanged}>
+                            </c-capability-map-canvas>
+                        </div>
+                    </div>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+
+    <!-- Template Modal -->
+    <template if:true={showTemplateModal}>
+        <c-capability-map-template-modal
+            map-id={capabilityMap.Id}
+            applied-templates={appliedTemplates}
+            onclose={handleCloseTemplates}
+            ontemplatesapplied={handleTemplatesApplied}>
+        </c-capability-map-template-modal>
+    </template>
+
+    <!-- Hours Config Modal -->
+    <template if:true={showHoursConfigModal}>
+        <c-hours-config-modal
+            capability-map={capabilityMap}
+            onclose={handleCloseHoursConfig}
+            onhoursupdated={handleHoursUpdated}>
+        </c-hours-config-modal>
+    </template>
+</template>

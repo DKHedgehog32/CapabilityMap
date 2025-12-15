@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Allocated_Hours__c</fullName>
+    <label>Allocated Hours</label>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>2</scale>
+    <formula>Capability__r.Estimated_Hours__c * Allocation_Percent__c</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <description>Calculated: Capability hours × Allocation percentage</description>
+</CustomField>

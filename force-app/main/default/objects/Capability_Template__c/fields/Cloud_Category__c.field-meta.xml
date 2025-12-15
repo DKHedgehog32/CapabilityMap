@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Cloud_Category__c</fullName>
+    <label>Cloud Category</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Core CRM</fullName>
+                <default>true</default>
+                <label>Core CRM</label>
+            </value>
+            <value>
+                <fullName>Marketing and Commerce</fullName>
+                <default>false</default>
+                <label>Marketing and Commerce</label>
+            </value>
+            <value>
+                <fullName>Industry Clouds</fullName>
+                <default>false</default>
+                <label>Industry Clouds</label>
+            </value>
+            <value>
+                <fullName>Data and Analytics</fullName>
+                <default>false</default>
+                <label>Data and Analytics</label>
+            </value>
+            <value>
+                <fullName>Integration and Platform</fullName>
+                <default>false</default>
+                <label>Integration and Platform</label>
+            </value>
+            <value>
+                <fullName>Collaboration</fullName>
+                <default>false</default>
+                <label>Collaboration</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

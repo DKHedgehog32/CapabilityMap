@@ -1,0 +1,29 @@
+<template>
+    <div class="canvas-container">
+        <div class="canvas-toolbar slds-m-bottom_small">
+            <lightning-button variant="neutral" label="Add Category" icon-name="utility:add" onclick={handleAddCategory}></lightning-button>
+        </div>
+        <div class="categories-grid">
+            <template for:each={categoriesWithCapabilities} for:item="category">
+                <div key={category.Id} class="category-column" data-category-id={category.Id} ondragover={handleDragOver} ondrop={handleDrop}>
+                    <div class="category-header">
+                        <span class="category-name">{category.Name}</span>
+                        <lightning-button-icon icon-name="utility:edit" variant="bare" size="small" data-category-id={category.Id} onclick={handleEditCategory}></lightning-button-icon>
+                        <lightning-button-icon icon-name="utility:add" variant="bare" size="small" data-category-id={category.Id} onclick={handleAddCapability}></lightning-button-icon>
+                    </div>
+                    <div class="capabilities-list">
+                        <template for:each={category.capabilities} for:item="capability">
+                            <c-capability-tile key={capability.Id} capability={capability} roles={roles} role-assignments={roleAssignments} draggable="true" data-id={capability.Id} ondragstart={handleDragStart} oncapabilityclick={handleCapabilityClick}></c-capability-tile>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+    <template if:true={showCapabilityModal}>
+        <c-capability-edit-modal capability={selectedCapability} category-id={selectedCategory.Id} map-id={mapId} roles={roles} mode={editMode} onclose={handleCloseCapabilityModal} onsaved={handleCapabilitySaved}></c-capability-edit-modal>
+    </template>
+    <template if:true={showCategoryModal}>
+        <c-category-edit-modal category={selectedCategory} map-id={mapId} mode={editMode} onclose={handleCloseCategoryModal} onsaved={handleCategorySaved}></c-category-edit-modal>
+    </template>
+</template>

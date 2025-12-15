@@ -1,0 +1,15 @@
+:host {
+    display: block;
+}
+
+.status-draft {
+    border-left: 4px solid #f39c12;
+}
+
+.status-active {
+    border-left: 4px solid #27ae60;
+}
+
+.status-archived {
+    border-left: 4px solid #95a5a6;
+}

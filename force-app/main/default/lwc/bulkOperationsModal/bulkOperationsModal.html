@@ -1,0 +1,16 @@
+<template>
+    <section role="dialog" class="slds-modal slds-fade-in-open slds-modal_small">
+        <div class="slds-modal__container">
+            <header class="slds-modal__header"><h2 class="slds-modal__title">Bulk Update ({selectedCount} selected)</h2></header>
+            <div class="slds-modal__content slds-p-around_medium">
+                <lightning-combobox label="Set Size" value={size} options={sizeOptions} onchange={handleSizeChange}></lightning-combobox>
+                <lightning-combobox label="Set Phase" value={phase} options={phaseOptions} onchange={handlePhaseChange} class="slds-m-top_small"></lightning-combobox>
+            </div>
+            <footer class="slds-modal__footer">
+                <lightning-button label="Cancel" onclick={handleClose}></lightning-button>
+                <lightning-button label="Apply" variant="brand" onclick={handleApply}></lightning-button>
+            </footer>
+        </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+</template>

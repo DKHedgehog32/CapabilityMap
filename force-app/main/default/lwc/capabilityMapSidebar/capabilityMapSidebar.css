@@ -1,0 +1,27 @@
+.sidebar-container {
+    background: #f3f3f3;
+    border-radius: 8px;
+    min-height: 400px;
+}
+
+.size-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.legend-label {
+    font-size: 12px;
+}

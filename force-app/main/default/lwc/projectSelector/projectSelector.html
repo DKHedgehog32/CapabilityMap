@@ -1,0 +1,50 @@
+<template>
+    <div class="slds-combobox-group">
+        <div class="slds-combobox_container">
+            <div class={comboboxClass} aria-expanded={showDropdown} aria-haspopup="listbox" role="combobox">
+                <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                    <lightning-input
+                        type="text"
+                        label="Select Klient Project"
+                        placeholder="Search projects..."
+                        value={searchTerm}
+                        onchange={handleSearchChange}
+                        onfocus={handleFocus}
+                        onblur={handleBlur}>
+                    </lightning-input>
+                    <template if:true={isSearching}>
+                        <lightning-spinner alternative-text="Searching" size="small" class="slds-input__spinner"></lightning-spinner>
+                    </template>
+                </div>
+
+                <template if:true={showDropdown}>
+                    <div class="slds-dropdown slds-dropdown_length-5 slds-dropdown_fluid" role="listbox">
+                        <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                            <template for:each={projects} for:item="project">
+                                <li key={project.Id} role="presentation" class="slds-listbox__item">
+                                    <div class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small"
+                                         role="option"
+                                         data-id={project.Id}
+                                         onclick={handleProjectSelect}>
+                                        <span class="slds-media__figure slds-listbox__option-icon">
+                                            <lightning-icon icon-name="standard:work_order" size="small"></lightning-icon>
+                                        </span>
+                                        <span class="slds-media__body">
+                                            <span class="slds-listbox__option-text slds-listbox__option-text_entity">{project.Name}</span>
+                                            <span class="slds-listbox__option-meta slds-listbox__option-meta_entity">{project.Krow__Status__c}</span>
+                                        </span>
+                                    </div>
+                                </li>
+                            </template>
+                            <template if:false={hasProjects}>
+                                <li class="slds-listbox__item slds-p-around_small slds-text-color_weak">
+                                    No projects found
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</template>

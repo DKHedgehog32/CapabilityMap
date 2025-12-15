@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Capability_Template__c</fullName>
+    <label>Capability Template</label>
+    <type>Lookup</type>
+    <referenceTo>Capability_Template__c</referenceTo>
+    <relationshipLabel>Map Usages</relationshipLabel>
+    <relationshipName>Map_Usages</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>true</required>
+</CustomField>

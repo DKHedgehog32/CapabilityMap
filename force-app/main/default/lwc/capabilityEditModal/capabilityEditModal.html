@@ -1,0 +1,25 @@
+<template>
+    <section role="dialog" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+            <header class="slds-modal__header">
+                <lightning-button-icon icon-name="utility:close" variant="bare-inverse" class="slds-modal__close" onclick={handleClose}></lightning-button-icon>
+                <h2 class="slds-modal__title">{modalTitle}</h2>
+            </header>
+            <div class="slds-modal__content slds-p-around_medium">
+                <lightning-input label="Name" value={name} onchange={handleNameChange} required></lightning-input>
+                <lightning-combobox label="Size" value={size} options={sizeOptions} onchange={handleSizeChange} class="slds-m-top_small"></lightning-combobox>
+                <lightning-combobox label="Phase" value={phase} options={phaseOptions} onchange={handlePhaseChange} class="slds-m-top_small"></lightning-combobox>
+                <lightning-input label="Hours Override" type="number" value={hoursOverride} onchange={handleHoursChange} class="slds-m-top_small"></lightning-input>
+                <lightning-textarea label="Description" value={description} onchange={handleDescriptionChange} class="slds-m-top_small"></lightning-textarea>
+            </div>
+            <footer class="slds-modal__footer">
+                <template if:true={isEditMode}>
+                    <lightning-button label="Delete" variant="destructive" onclick={handleDelete}></lightning-button>
+                </template>
+                <lightning-button label="Cancel" onclick={handleClose}></lightning-button>
+                <lightning-button label="Save" variant="brand" onclick={handleSave}></lightning-button>
+            </footer>
+        </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+</template>

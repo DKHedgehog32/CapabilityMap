@@ -1,0 +1,26 @@
+<template>
+    <section role="dialog" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+            <header class="slds-modal__header">
+                <lightning-button-icon icon-name="utility:close" variant="bare-inverse" class="slds-modal__close" onclick={handleClose}></lightning-button-icon>
+                <h2 class="slds-modal__title">Hours Configuration</h2>
+            </header>
+            <div class="slds-modal__content slds-p-around_medium">
+                <div class="slds-grid slds-wrap slds-gutters">
+                    <div class="slds-col slds-size_1-of-2"><lightning-input type="number" label="XS Hours" value={hours.XS} data-size="XS" onchange={handleHoursChange}></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-2"><lightning-input type="number" label="S Hours" value={hours.S} data-size="S" onchange={handleHoursChange}></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-2"><lightning-input type="number" label="M Hours" value={hours.M} data-size="M" onchange={handleHoursChange}></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-2"><lightning-input type="number" label="L Hours" value={hours.L} data-size="L" onchange={handleHoursChange}></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-2"><lightning-input type="number" label="XL Hours" value={hours.XL} data-size="XL" onchange={handleHoursChange}></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-2"><lightning-input type="number" label="XXL Hours" value={hours.XXL} data-size="XXL" onchange={handleHoursChange}></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-2"><lightning-input type="number" label="XXXL Hours" value={hours.XXXL} data-size="XXXL" onchange={handleHoursChange}></lightning-input></div>
+                </div>
+            </div>
+            <footer class="slds-modal__footer">
+                <lightning-button label="Cancel" onclick={handleClose}></lightning-button>
+                <lightning-button label="Save" variant="brand" onclick={handleSave}></lightning-button>
+            </footer>
+        </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+</template>

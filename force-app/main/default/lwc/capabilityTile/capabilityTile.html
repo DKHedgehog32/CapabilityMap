@@ -1,0 +1,19 @@
+<template>
+    <div class="tile" style={tileStyle} onclick={handleClick}>
+        <div class="tile-header">
+            <span class="tile-name">{capability.Name}</span>
+            <span class="tile-hours">{capability.Estimated_Hours__c}h</span>
+        </div>
+        <div class="tile-meta">
+            <span class="phase-badge" style={phaseBadgeStyle}>{capability.Phase__c}</span>
+            <span class="size-badge">{capability.Size__c}</span>
+        </div>
+        <template if:true={assignedRoles.length}>
+            <div class="tile-roles">
+                <template for:each={assignedRoles} for:item="role">
+                    <span key={role.id} class="role-chip" style={role.style}>{role.name}</span>
+                </template>
+            </div>
+        </template>
+    </div>
+</template>

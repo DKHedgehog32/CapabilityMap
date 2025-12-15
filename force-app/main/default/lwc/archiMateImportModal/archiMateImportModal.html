@@ -1,0 +1,16 @@
+<template>
+    <section role="dialog" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+            <header class="slds-modal__header"><h2 class="slds-modal__title">Import ArchiMate</h2></header>
+            <div class="slds-modal__content slds-p-around_medium">
+                <lightning-textarea label="Paste ArchiMate JSON" value={jsonContent} onchange={handleJsonChange} rows="10"></lightning-textarea>
+                <template if:true={result}><p class="slds-m-top_small">Created {result.categoriesCreated} categories and {result.capabilitiesCreated} capabilities</p></template>
+            </div>
+            <footer class="slds-modal__footer">
+                <lightning-button label="Cancel" onclick={handleClose}></lightning-button>
+                <lightning-button label="Import" variant="brand" onclick={handleImport} disabled={isLoading}></lightning-button>
+            </footer>
+        </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+</template>

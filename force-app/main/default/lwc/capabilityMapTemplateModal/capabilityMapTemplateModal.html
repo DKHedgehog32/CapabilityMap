@@ -1,0 +1,53 @@
+<template>
+    <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_large">
+        <div class="slds-modal__container">
+            <header class="slds-modal__header">
+                <lightning-button-icon icon-name="utility:close" variant="bare-inverse" 
+                    class="slds-modal__close" onclick={handleClose}></lightning-button-icon>
+                <h2 class="slds-modal__title">Select Templates</h2>
+            </header>
+            
+            <div class="slds-modal__content slds-p-around_medium">
+                <template if:true={isLoading}>
+                    <lightning-spinner alternative-text="Loading"></lightning-spinner>
+                </template>
+                
+                <template if:false={isLoading}>
+                    <!-- Merge Option -->
+                    <div class="slds-m-bottom_medium">
+                        <lightning-input type="checkbox" label="Merge duplicate category names" 
+                            checked={mergeCategories} onchange={handleMergeToggle}></lightning-input>
+                    </div>
+                    
+                    <!-- Template Groups -->
+                    <template for:each={groupedTemplates} for:item="group">
+                        <div key={group.category} class="slds-m-bottom_medium">
+                            <h3 class="slds-text-heading_small slds-m-bottom_x-small">{group.category}</h3>
+                            <div class="template-grid">
+                                <template for:each={group.items} for:item="template">
+                                    <div key={template.Id} 
+                                         class={template.isSelected ? 'template-card selected' : 'template-card'}
+                                         data-id={template.Id}
+                                         onclick={handleTemplateToggle}>
+                                        <div class="template-name">{template.Template_Name__c}</div>
+                                        <div class="template-version">v{template.Version__c}</div>
+                                        <template if:true={template.isApplied}>
+                                            <lightning-badge label="Applied" class="slds-badge_inverse"></lightning-badge>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+            </div>
+            
+            <footer class="slds-modal__footer">
+                <lightning-button label="Cancel" onclick={handleClose}></lightning-button>
+                <lightning-button variant="brand" label="Apply Selected ({selectedCount})" 
+                    onclick={handleApply} disabled={!hasSelectedTemplates}></lightning-button>
+            </footer>
+        </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+</template>

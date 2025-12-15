@@ -1,0 +1,14 @@
+:host {
+    display: block;
+    min-width: 300px;
+}
+
+.slds-dropdown {
+    position: absolute;
+    z-index: 9999;
+}
+
+.slds-listbox__option:hover {
+    background-color: #f3f3f3;
+    cursor: pointer;
+}

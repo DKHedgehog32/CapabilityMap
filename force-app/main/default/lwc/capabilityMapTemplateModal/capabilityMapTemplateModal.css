@@ -1,0 +1,26 @@
+.template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+.template-card {
+    padding: 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.template-card:hover {
+    border-color: #0176d3;
+}
+.template-card.selected {
+    border-color: #0176d3;
+    background: #ebf5ff;
+}
+.template-name {
+    font-weight: 600;
+}
+.template-version {
+    font-size: 12px;
+    color: #666;
+}

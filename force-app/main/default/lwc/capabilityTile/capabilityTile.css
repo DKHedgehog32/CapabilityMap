@@ -1,0 +1,52 @@
+.tile {
+    background: white;
+    border-radius: 6px;
+    padding: 10px;
+    cursor: pointer;
+    transition: box-shadow 0.2s;
+}
+.tile:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.tile-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+.tile-name {
+    font-weight: 500;
+    font-size: 13px;
+}
+.tile-hours {
+    font-size: 12px;
+    color: #666;
+}
+.tile-meta {
+    display: flex;
+    gap: 6px;
+}
+.phase-badge {
+    font-size: 10px;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.size-badge {
+    font-size: 10px;
+    background: #e5e7eb;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.tile-roles {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+.role-chip {
+    font-size: 9px;
+    background: #0176d3;
+    color: white;
+    padding: 1px 4px;
+    border-radius: 3px;
+}

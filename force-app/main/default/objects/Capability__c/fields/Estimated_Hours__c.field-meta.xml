@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Estimated_Hours__c</fullName>
+    <label>Estimated Hours</label>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>0</scale>
+    <formula>IF(NOT(ISBLANK(Hours_Override__c)), 
+    Hours_Override__c,
+    CASE(Size__c,
+        "XS", Capability_Category__r.Capability_Map__r.XS_Hours__c,
+        "S", Capability_Category__r.Capability_Map__r.S_Hours__c,
+        "M", Capability_Category__r.Capability_Map__r.M_Hours__c,
+        "L", Capability_Category__r.Capability_Map__r.L_Hours__c,
+        "XL", Capability_Category__r.Capability_Map__r.XL_Hours__c,
+        "XXL", Capability_Category__r.Capability_Map__r.XXL_Hours__c,
+        "XXXL", Capability_Category__r.Capability_Map__r.XXXL_Hours__c,
+        0
+    )
+)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <description>Calculated hours based on size or manual override</description>
+</CustomField>
