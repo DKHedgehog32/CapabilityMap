@@ -8,5 +8,4 @@
     <relationshipName>Capability_Maps</relationshipName>
     <deleteConstraint>Restrict</deleteConstraint>
     <required>true</required>
-    <unique>true</unique>
 </CustomField>
