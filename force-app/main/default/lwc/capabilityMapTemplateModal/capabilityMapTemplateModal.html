@@ -13,20 +13,18 @@
                 </template>
                 
                 <template if:false={isLoading}>
-                    <!-- Merge Option -->
                     <div class="slds-m-bottom_medium">
                         <lightning-input type="checkbox" label="Merge duplicate category names" 
                             checked={mergeCategories} onchange={handleMergeToggle}></lightning-input>
                     </div>
                     
-                    <!-- Template Groups -->
                     <template for:each={groupedTemplates} for:item="group">
                         <div key={group.category} class="slds-m-bottom_medium">
                             <h3 class="slds-text-heading_small slds-m-bottom_x-small">{group.category}</h3>
                             <div class="template-grid">
                                 <template for:each={group.items} for:item="template">
                                     <div key={template.Id} 
-                                         class={template.isSelected ? 'template-card selected' : 'template-card'}
+                                         class={template.cardClass}
                                          data-id={template.Id}
                                          onclick={handleTemplateToggle}>
                                         <div class="template-name">{template.Template_Name__c}</div>
@@ -45,7 +43,7 @@
             <footer class="slds-modal__footer">
                 <lightning-button label="Cancel" onclick={handleClose}></lightning-button>
                 <lightning-button variant="brand" label="Apply Selected ({selectedCount})" 
-                    onclick={handleApply} disabled={!hasSelectedTemplates}></lightning-button>
+                    onclick={handleApply} disabled={hasNoSelectedTemplates}></lightning-button>
             </footer>
         </div>
     </section>

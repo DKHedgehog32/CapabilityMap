@@ -1,3 +1,8 @@
+/**
+ * @description Modal for selecting and applying capability templates
+ * @author Cobra CRM B.V.
+ * @version 2.3.0
+ */
 import { LightningElement, api, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getActiveTemplates from '@salesforce/apex/CapabilityTemplateController.getActiveTemplates';
@@ -32,10 +37,15 @@ export default class CapabilityMapTemplateModal extends LightningElement {
         this.templates.forEach(t => {
             const cat = t.Cloud_Category__c || 'Other';
             if (!groups[cat]) groups[cat] = [];
+            
+            const isSelected = this.selectedTemplateIds.includes(t.Id);
+            const isApplied = this.appliedTemplates.some(at => at.Capability_Template__c === t.Id);
+            
             groups[cat].push({
                 ...t,
-                isSelected: this.selectedTemplateIds.includes(t.Id),
-                isApplied: this.appliedTemplates.some(at => at.Capability_Template__c === t.Id)
+                isSelected: isSelected,
+                isApplied: isApplied,
+                cardClass: isSelected ? 'template-card selected' : 'template-card'
             });
         });
         return Object.entries(groups).map(([category, items]) => ({ category, items }));
@@ -43,6 +53,10 @@ export default class CapabilityMapTemplateModal extends LightningElement {
 
     get hasSelectedTemplates() {
         return this.selectedTemplateIds.length > 0;
+    }
+
+    get hasNoSelectedTemplates() {
+        return this.selectedTemplateIds.length === 0;
     }
 
     get selectedCount() {

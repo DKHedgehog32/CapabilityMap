@@ -2,25 +2,33 @@
     <lightning-card title="Roles" icon-name="custom:custom14">
         <lightning-button slot="actions" label="Add Role" onclick={handleAddNew}></lightning-button>
         <div class="slds-p-around_small">
-            <template for:each={roles} for:item="role">
+            <template for:each={rolesWithStyle} for:item="role">
                 <div key={role.Id} class="role-item slds-grid slds-p-around_x-small">
                     <span class="role-color" style={role.colorStyle}></span>
                     <span class="slds-col slds-grow">{role.Name}</span>
                     <span class="slds-col">{role.Hourly_Rate__c}/hr</span>
-                    <lightning-button-icon icon-name="utility:edit" data-id={role.Id} onclick={handleEdit}></lightning-button-icon>
-                    <lightning-button-icon icon-name="utility:delete" data-id={role.Id} onclick={handleDelete}></lightning-button-icon>
+                    <lightning-button-icon icon-name="utility:edit" data-id={role.Id} onclick={handleEdit} alternative-text="Edit"></lightning-button-icon>
+                    <lightning-button-icon icon-name="utility:delete" data-id={role.Id} onclick={handleDelete} alternative-text="Delete"></lightning-button-icon>
                 </div>
             </template>
         </div>
     </lightning-card>
+
     <template if:true={showForm}>
         <section role="dialog" class="slds-modal slds-fade-in-open slds-modal_small">
             <div class="slds-modal__container">
-                <header class="slds-modal__header"><h2 class="slds-modal__title">{editingRole ? 'Edit Role' : 'New Role'}</h2></header>
+                <header class="slds-modal__header">
+                    <h2 class="slds-modal__title">{modalTitle}</h2>
+                </header>
                 <div class="slds-modal__content slds-p-around_medium">
                     <lightning-input label="Role Name" value={roleName} onchange={handleNameChange}></lightning-input>
                     <lightning-input type="number" label="Hourly Rate" value={hourlyRate} onchange={handleRateChange} class="slds-m-top_small"></lightning-input>
-                    <lightning-input type="color" label="Color" value={roleColor} onchange={handleColorChange} class="slds-m-top_small"></lightning-input>
+                    <div class="slds-form-element slds-m-top_small">
+                        <label class="slds-form-element__label">Color</label>
+                        <div class="slds-form-element__control">
+                            <input type="color" value={roleColor} onchange={handleColorChange} class="color-picker"/>
+                        </div>
+                    </div>
                 </div>
                 <footer class="slds-modal__footer">
                     <lightning-button label="Cancel" onclick={handleCancel}></lightning-button>
