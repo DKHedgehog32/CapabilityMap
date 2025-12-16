@@ -1,50 +1,62 @@
 <template>
-    <div class="slds-combobox-group">
-        <div class="slds-combobox_container">
-            <div class={comboboxClass} aria-expanded={showDropdown} aria-haspopup="listbox" role="combobox">
-                <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
-                    <lightning-input
-                        type="text"
-                        label="Select Klient Project"
-                        placeholder="Search projects..."
-                        value={searchTerm}
-                        onchange={handleSearchChange}
-                        onfocus={handleFocus}
-                        onblur={handleBlur}>
-                    </lightning-input>
-                    <template if:true={isSearching}>
-                        <lightning-spinner alternative-text="Searching" size="small" class="slds-input__spinner"></lightning-spinner>
-                    </template>
-                </div>
-
-                <template if:true={showDropdown}>
-                    <div class="slds-dropdown slds-dropdown_length-5 slds-dropdown_fluid" role="listbox">
-                        <ul class="slds-listbox slds-listbox_vertical" role="presentation">
-                            <template for:each={projects} for:item="project">
-                                <li key={project.Id} role="presentation" class="slds-listbox__item">
-                                    <div class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small"
-                                         role="option"
-                                         data-id={project.Id}
-                                         onclick={handleProjectSelect}>
-                                        <span class="slds-media__figure slds-listbox__option-icon">
-                                            <lightning-icon icon-name="standard:work_order" size="small"></lightning-icon>
-                                        </span>
-                                        <span class="slds-media__body">
-                                            <span class="slds-listbox__option-text slds-listbox__option-text_entity">{project.Name}</span>
-                                            <span class="slds-listbox__option-meta slds-listbox__option-meta_entity">{project.Krow__Status__c}</span>
-                                        </span>
-                                    </div>
-                                </li>
-                            </template>
-                            <template if:false={hasProjects}>
-                                <li class="slds-listbox__item slds-p-around_small slds-text-color_weak">
-                                    No projects found
-                                </li>
-                            </template>
-                        </ul>
+    <div class="project-selector">
+        <!-- Loading state -->
+        <template if:true={isLoading}>
+            <div class="loading-state">
+                <lightning-spinner alternative-text="Checking..." size="small"></lightning-spinner>
+            </div>
+        </template>
+        
+        <!-- Klient PSA Search Mode -->
+        <template if:true={showKlientSearch}>
+            <div class="selector-container">
+                <input type="text" 
+                       class="selector-input" 
+                       placeholder="Search for a Klient project..."
+                       value={searchTerm}
+                       onkeyup={handleSearchChange}
+                       onfocus={handleFocus}
+                       onblur={handleBlur}>
+                
+                <template if:true={isSearching}>
+                    <div class="spinner-container">
+                        <lightning-spinner alternative-text="Searching" size="small"></lightning-spinner>
                     </div>
                 </template>
             </div>
-        </div>
+            
+            <template if:true={showDropdown}>
+                <div class="dropdown">
+                    <template if:true={hasProjects}>
+                        <template for:each={projects} for:item="project">
+                            <div key={project.Id} class="dropdown-item" data-id={project.Id} onclick={handleProjectSelect}>
+                                <span class="project-icon">📁</span>
+                                <div class="project-info">
+                                    <div class="project-name">{project.Name}</div>
+                                    <div class="project-status">{project.Krow__Project_Status__c}</div>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                    <template if:false={hasProjects}>
+                        <div class="dropdown-empty">No projects found</div>
+                    </template>
+                </div>
+            </template>
+        </template>
+        
+        <!-- Standalone Mode (No Klient PSA) -->
+        <template if:true={showStandaloneInput}>
+            <div class="standalone-container">
+                <input type="text" 
+                       class="selector-input" 
+                       placeholder="Enter map name..."
+                       value={standaloneMapName}
+                       onchange={handleStandaloneNameChange}>
+                <button class="create-btn" onclick={handleCreateStandaloneMap}>
+                    Create Map
+                </button>
+            </div>
+        </template>
     </div>
 </template>

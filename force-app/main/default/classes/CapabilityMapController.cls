@@ -1,11 +1,14 @@
 /**
- * @description Controller for Capability Map operations
- * @author Cobra CRM B.V.
- * @date 2024-12-15
- * @version 2.3.0
+ * @description    Controller for Capability Map operations
+ *                 Supports both Klient-linked and standalone maps
+ * 
+ * @author         Cobra CRM B.V.
+ * @date           2024-12-15
+ * @version        2.3.2
  * 
  * CHANGELOG:
  * 2024-12-15 - v2.3.0 - Initial creation with streamlined architecture
+ * 2024-12-15 - v2.3.2 - Added support for standalone maps without Klient
  */
 public with sharing class CapabilityMapController {
     
@@ -16,41 +19,62 @@ public with sharing class CapabilityMapController {
      */
     @AuraEnabled(cacheable=true)
     public static Capability_Map__c getMapByProject(Id projectId) {
+        if (projectId == null) {
+            return null;
+        }
+        
         List<Capability_Map__c> maps = [
             SELECT Id, Name, Status__c, Last_Saved__c, Auto_Save_Enabled__c,
                    XS_Hours__c, S_Hours__c, M_Hours__c, L_Hours__c,
                    XL_Hours__c, XXL_Hours__c, XXXL_Hours__c,
-                   Krow_Project__c, Krow_Project__r.Name
+                   Krow_Project__c
             FROM Capability_Map__c
             WHERE Krow_Project__c = :projectId
-            WITH SECURITY_ENFORCED
+            
             LIMIT 1
         ];
         return maps.isEmpty() ? null : maps[0];
     }
     
     /**
-     * @description Create a new capability map for a project
-     * @param projectId The Klient Project ID
+     * @description Get all capability maps for the user (standalone maps)
+     * @return List<Capability_Map__c> All accessible maps
+     */
+    @AuraEnabled(cacheable=true)
+    public static List<Capability_Map__c> getMyMaps() {
+        return [
+            SELECT Id, Name, Status__c, Last_Saved__c, CreatedDate
+            FROM Capability_Map__c
+            WHERE CreatedById = :UserInfo.getUserId()
+            
+            ORDER BY LastModifiedDate DESC
+            LIMIT 50
+        ];
+    }
+    
+    /**
+     * @description Create a new capability map (with or without project)
+     * @param projectId The Klient Project ID (can be null for standalone)
      * @param mapName The name for the new map
      * @return Capability_Map__c The created map
      */
     @AuraEnabled
     public static Capability_Map__c createMap(Id projectId, String mapName) {
-        // Check if map already exists
-        List<Capability_Map__c> existing = [
-            SELECT Id FROM Capability_Map__c 
-            WHERE Krow_Project__c = :projectId 
-            WITH SECURITY_ENFORCED 
-            LIMIT 1
-        ];
-        if (!existing.isEmpty()) {
-            throw new AuraHandledException('A capability map already exists for this project');
+        // Check if map already exists for this project (only if project specified)
+        if (projectId != null) {
+            List<Capability_Map__c> existing = [
+                SELECT Id FROM Capability_Map__c 
+                WHERE Krow_Project__c = :projectId 
+                 
+                LIMIT 1
+            ];
+            if (!existing.isEmpty()) {
+                throw new AuraHandledException('A capability map already exists for this project');
+            }
         }
         
         Capability_Map__c newMap = new Capability_Map__c(
             Name = mapName,
-            Krow_Project__c = projectId,
             Status__c = 'Draft',
             XS_Hours__c = 2,
             S_Hours__c = 4,
@@ -60,6 +84,12 @@ public with sharing class CapabilityMapController {
             XXL_Hours__c = 64,
             XXXL_Hours__c = 128
         );
+        
+        // Only set project if provided
+        if (projectId != null) {
+            newMap.Krow_Project__c = projectId;
+        }
+        
         insert newMap;
         return newMap;
     }
@@ -97,7 +127,7 @@ public with sharing class CapabilityMapController {
             SELECT Id, Name, Sort_Order__c, Is_Subcategory__c, ArchiMate_Id__c
             FROM Capability_Category__c
             WHERE Capability_Map__c = :mapId
-            WITH SECURITY_ENFORCED
+            
             ORDER BY Sort_Order__c
         ];
         result.put('categories', categories);
@@ -105,11 +135,11 @@ public with sharing class CapabilityMapController {
         // Get capabilities
         List<Capability__c> capabilities = [
             SELECT Id, Name, Size__c, Phase__c, Sort_Order__c, 
-                   Estimated_Hours__c, Hours_Override__c, Description__c,
+                   Calculated_Hours__c, Hours_Override__c, Description__c,
                    Capability_Category__c, ArchiMate_Id__c
             FROM Capability__c
             WHERE Capability_Category__r.Capability_Map__c = :mapId
-            WITH SECURITY_ENFORCED
+            
             ORDER BY Capability_Category__c, Sort_Order__c
         ];
         result.put('capabilities', capabilities);
@@ -119,7 +149,7 @@ public with sharing class CapabilityMapController {
             SELECT Id, Name, Hourly_Rate__c, Color__c, Sort_Order__c
             FROM Capability_Role__c
             WHERE Capability_Map__c = :mapId
-            WITH SECURITY_ENFORCED
+            
             ORDER BY Sort_Order__c
         ];
         result.put('roles', roles);
@@ -130,7 +160,7 @@ public with sharing class CapabilityMapController {
                    Allocation_Percent__c, Allocated_Hours__c
             FROM Capability_Role_Assignment__c
             WHERE Capability__r.Capability_Category__r.Capability_Map__c = :mapId
-            WITH SECURITY_ENFORCED
+            
         ];
         result.put('roleAssignments', assignments);
         
@@ -140,7 +170,7 @@ public with sharing class CapabilityMapController {
                    Applied_Date__c, Applied_By__r.Name
             FROM Capability_Map_Template__c
             WHERE Capability_Map__c = :mapId
-            WITH SECURITY_ENFORCED
+            
             ORDER BY Applied_Date__c DESC
         ];
         result.put('appliedTemplates', appliedTemplates);
@@ -173,7 +203,7 @@ public with sharing class CapabilityMapController {
     /**
      * @description Clone a capability map to a new project
      * @param sourceMapId The source map ID
-     * @param targetProjectId The target project ID
+     * @param targetProjectId The target project ID (can be null)
      * @param newMapName The name for the cloned map
      * @return Capability_Map__c The cloned map
      */
@@ -229,15 +259,16 @@ public with sharing class CapabilityMapController {
     
     // Private helper method
     private static Capability_Map__c getMapById(Id mapId) {
-        return [
+        List<Capability_Map__c> maps = [
             SELECT Id, Name, Status__c, Last_Saved__c, Auto_Save_Enabled__c,
                    XS_Hours__c, S_Hours__c, M_Hours__c, L_Hours__c,
                    XL_Hours__c, XXL_Hours__c, XXXL_Hours__c,
-                   Krow_Project__c, Krow_Project__r.Name
+                   Krow_Project__c
             FROM Capability_Map__c
             WHERE Id = :mapId
-            WITH SECURITY_ENFORCED
+            
             LIMIT 1
         ];
+        return maps.isEmpty() ? null : maps[0];
     }
 }

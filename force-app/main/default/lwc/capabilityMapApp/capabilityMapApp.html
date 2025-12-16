@@ -1,107 +1,241 @@
 <template>
-    <lightning-card title="Capability Map Tool" icon-name="custom:custom63">
-        <!-- Header with Project Selector -->
-        <div slot="actions">
-            <c-project-selector onprojectselected={handleProjectSelected}></c-project-selector>
-        </div>
-
-        <div class="slds-p-around_medium">
-            <!-- Loading Spinner -->
-            <template if:true={isLoading}>
-                <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
-            </template>
-
-            <!-- No Project Selected -->
-            <template if:false={selectedProjectId}>
-                <div class="slds-text-align_center slds-p-around_large">
-                    <lightning-icon icon-name="utility:info" size="large"></lightning-icon>
-                    <p class="slds-text-heading_medium slds-m-top_medium">Select a Klient Project to get started</p>
-                </div>
-            </template>
-
-            <!-- Project Selected but No Map -->
-            <template if:true={selectedProjectId}>
-                <template if:false={hasMap}>
-                    <div class="slds-text-align_center slds-p-around_large">
-                        <lightning-icon icon-name="utility:new" size="large"></lightning-icon>
-                        <p class="slds-text-heading_medium slds-m-top_medium">No capability map exists for this project</p>
-                        <lightning-button 
-                            variant="brand" 
-                            label="Create Capability Map" 
-                            onclick={handleCreateMap}
-                            class="slds-m-top_medium">
-                        </lightning-button>
-                    </div>
-                </template>
-
-                <!-- Map Exists -->
+    <div class="app-container">
+        <!-- HEADER - Matching mockup design -->
+        <header class="app-header">
+            <div class="logo">
+                <svg viewBox="0 0 32 32" fill="none">
+                    <rect x="2" y="2" width="12" height="12" rx="2" fill="#1B96FF"/>
+                    <rect x="18" y="2" width="12" height="12" rx="2" fill="#1B96FF" opacity="0.7"/>
+                    <rect x="2" y="18" width="12" height="12" rx="2" fill="#1B96FF" opacity="0.7"/>
+                    <rect x="18" y="18" width="12" height="12" rx="2" fill="#1B96FF" opacity="0.4"/>
+                </svg>
+                <span>Capability Map</span>
+            </div>
+            
+            <div class="title-group">
                 <template if:true={hasMap}>
-                    <!-- Toolbar -->
-                    <div class="slds-grid slds-gutters slds-m-bottom_medium">
-                        <div class="slds-col">
-                            <lightning-button-group>
-                                <lightning-button label="Save" icon-name="utility:save" onclick={handleSave}></lightning-button>
-                                <lightning-button label="Templates" icon-name="utility:layout" onclick={handleOpenTemplates}></lightning-button>
-                                <lightning-button label="Hours Config" icon-name="utility:clock" onclick={handleOpenHoursConfig}></lightning-button>
-                            </lightning-button-group>
-                        </div>
-                        <div class="slds-col slds-text-align_right">
-                            <template if:true={hasUnsavedChanges}>
-                                <lightning-badge label="Unsaved Changes" class="slds-theme_warning"></lightning-badge>
-                            </template>
-                            <c-map-lifecycle-controls 
-                                map-id={capabilityMap.Id}
-                                onmapcleared={handleMapCleared}
-                                onmapdeleted={handleMapDeleted}>
-                            </c-map-lifecycle-controls>
-                        </div>
-                    </div>
-
-                    <!-- Main Content -->
-                    <div class="slds-grid slds-gutters">
-                        <!-- Sidebar -->
-                        <div class="slds-col slds-size_3-of-12">
-                            <c-capability-map-sidebar 
-                                map-id={capabilityMap.Id}
-                                categories={categories}
-                                capabilities={capabilities}
-                                roles={roles}>
-                            </c-capability-map-sidebar>
-                        </div>
-                        
-                        <!-- Canvas -->
-                        <div class="slds-col slds-size_9-of-12">
-                            <c-capability-map-canvas
-                                map-id={capabilityMap.Id}
-                                categories={categories}
-                                capabilities={capabilities}
-                                roles={roles}
-                                role-assignments={roleAssignments}
-                                ondatachanged={handleDataChanged}>
-                            </c-capability-map-canvas>
-                        </div>
-                    </div>
+                    <input type="text" class="title-input" value={mapName} onchange={handleMapNameChange}>
+                    <span class={statusBadgeClass}>{statusText}</span>
                 </template>
-            </template>
+                <template if:false={hasMap}>
+                    <c-project-selector onprojectselected={handleProjectSelected}></c-project-selector>
+                </template>
+            </div>
+            
+            <div class="toolbar">
+                <button class="btn icon" title="Undo" disabled={cannotUndo} onclick={handleUndo}>↶</button>
+                <button class="btn icon" title="Redo" disabled={cannotRedo} onclick={handleRedo}>↷</button>
+                <div class="divider"></div>
+                <button class="btn orange" onclick={handleOpenTemplates}>
+                    <span>☁️</span> Salesforce Templates
+                </button>
+                <div class="divider"></div>
+                <button class="btn" onclick={handleExport}>Export</button>
+                <button class="btn" onclick={handleImport}>Import</button>
+                <button class="btn primary" onclick={handleAddCapability}>+ Add Capability</button>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- SIDEBAR -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <div class="sidebar-title">
+                        <span>Categories</span>
+                        <button onclick={handleAddCategory}>+</button>
+                    </div>
+                    <div class="search-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="M21 21l-4.35-4.35"/>
+                        </svg>
+                        <input type="text" placeholder="Search..." value={searchTerm} onkeyup={handleSearchChange}>
+                    </div>
+                </div>
+                
+                <div class="sidebar-content">
+                    <!-- Category List -->
+                    <div class="category-list">
+                        <template for:each={categoriesWithCount} for:item="cat">
+                            <div key={cat.Id} class={cat.itemClass} data-id={cat.Id} onclick={handleCategoryClick}>
+                                <span class="cat-name">{cat.Name}</span>
+                                <span class="cat-count">{cat.capabilityCount}</span>
+                                <div class="cat-actions">
+                                    <button data-id={cat.Id} onclick={handleEditCategory}>✏️</button>
+                                    <button class="delete" data-id={cat.Id} onclick={handleDeleteCategory}>🗑️</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <!-- Size Legend -->
+                    <div class="sidebar-title"><span>Sizing</span></div>
+                    <div class="size-legend">
+                        <template for:each={sizeLegendItems} for:item="size">
+                            <div key={size.id} class={size.itemClass} data-size={size.id} onclick={handleSizeFilterToggle}>
+                                <div class="size-color" style={size.colorStyle}>{size.label}</div>
+                                <div class="size-info">{size.description}</div>
+                                <span class="size-count">{size.count}</span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                <div class="sidebar-footer">
+                    <div class="stats-row"><span>Categories</span><span>{categoryCount}</span></div>
+                    <div class="stats-row"><span>Capabilities</span><span>{capabilityCount}</span></div>
+                    <div class="stats-row"><span>Selected</span><span>{selectedCount}</span></div>
+                    <div class="stats-row"><span>Total Hours</span><span>{totalHours}</span></div>
+                </div>
+            </aside>
+
+            <!-- CANVAS AREA -->
+            <main class="canvas-area">
+                <!-- Canvas Toolbar -->
+                <div class="canvas-toolbar">
+                    <div class="tool-group">
+                        <button class={allFilterClass} onclick={handleFilterAll}>All</button>
+                        <button class={sizedFilterClass} onclick={handleFilterSized}>Sized</button>
+                        <button class={tbdFilterClass} onclick={handleFilterTbd}>TBD Only</button>
+                    </div>
+                    
+                    <template if:true={hasSelection}>
+                        <div class="selection-info">
+                            <span><strong>{selectedCount}</strong> selected</span>
+                            <div class="selection-actions">
+                                <button onclick={handleBulkChangeSize}>Change Size</button>
+                                <button class="danger" onclick={handleBulkDelete}>Delete</button>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    <div class="zoom-group">
+                        <button class="zoom-btn" onclick={handleZoomOut}>−</button>
+                        <span class="zoom-level">{zoomLevelText}</span>
+                        <button class="zoom-btn" onclick={handleZoomIn}>+</button>
+                    </div>
+                </div>
+                
+                <!-- Map Container -->
+                <div class="map-container">
+                    <div class="capability-map" style={mapTransformStyle}>
+                        <template for:each={categoriesWithCapabilities} for:item="category">
+                            <div key={category.Id} class="category-column" data-category-id={category.Id}
+                                 ondragover={handleDragOver} ondrop={handleDrop}>
+                                <div class={category.headerClass}>
+                                    <span>{category.Name}</span>
+                                    <span class="grip">⋮⋮</span>
+                                </div>
+                                
+                                <template for:each={category.capabilities} for:item="cap">
+                                    <div key={cap.Id} 
+                                         class={cap.tileClass}
+                                         data-size={cap.Size__c}
+                                         data-id={cap.Id}
+                                         draggable="true"
+                                         onclick={handleTileClick}
+                                         ondblclick={handleTileDoubleClick}
+                                         oncontextmenu={handleTileContextMenu}
+                                         ondragstart={handleDragStart}
+                                         ondragend={handleDragEnd}>
+                                        <div class="checkbox" data-id={cap.Id} onclick={handleCheckboxClick}>
+                                            <template if:true={cap.isSelected}>✓</template>
+                                        </div>
+                                        <span class="tile-name">{cap.Name}</span>
+                                        <span class="tile-hours">{cap.displayHours}h</span>
+                                        <span class="grip">⋮⋮</span>
+                                    </div>
+                                </template>
+                                
+                                <div class="add-tile" data-category-id={category.Id} onclick={handleAddCapabilityToCategory}>
+                                    <span class="add-icon">+</span>
+                                    <span>Add</span>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <!-- Add Category Column -->
+                        <div class="add-category-column" onclick={handleAddCategory}>
+                            <span class="add-icon">+</span>
+                            <span>Add Category</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
-    </lightning-card>
 
-    <!-- Template Modal -->
-    <template if:true={showTemplateModal}>
-        <c-capability-map-template-modal
-            map-id={capabilityMap.Id}
-            applied-templates={appliedTemplates}
-            onclose={handleCloseTemplates}
-            ontemplatesapplied={handleTemplatesApplied}>
-        </c-capability-map-template-modal>
-    </template>
+        <!-- STATUS BAR -->
+        <footer class="status-bar">
+            <div class="status-item">
+                <span class="status-dot"></span>
+                <span>{connectionStatus}</span>
+            </div>
+            <div class="status-item">
+                <span>{capabilityCount}</span> capabilities
+            </div>
+            <div class="status-item">
+                Click = select • Ctrl+Click = multi-select • Double-click = edit
+            </div>
+        </footer>
 
-    <!-- Hours Config Modal -->
-    <template if:true={showHoursConfigModal}>
-        <c-hours-config-modal
-            capability-map={capabilityMap}
-            onclose={handleCloseHoursConfig}
-            onhoursupdated={handleHoursUpdated}>
-        </c-hours-config-modal>
-    </template>
+        <!-- MODALS -->
+        <template if:true={showCapabilityModal}>
+            <c-capability-edit-modal 
+                capability={selectedCapability}
+                category-id={selectedCategoryId}
+                map-id={mapId}
+                categories={categories}
+                mode={modalMode}
+                onclose={handleCloseCapabilityModal}
+                onsaved={handleCapabilitySaved}>
+            </c-capability-edit-modal>
+        </template>
+
+        <template if:true={showCategoryModal}>
+            <c-category-edit-modal 
+                category={selectedCategory}
+                map-id={mapId}
+                mode={modalMode}
+                onclose={handleCloseCategoryModal}
+                onsaved={handleCategorySaved}>
+            </c-category-edit-modal>
+        </template>
+
+        <template if:true={showTemplateModal}>
+            <c-capability-map-template-modal 
+                map-id={mapId}
+                applied-templates={appliedTemplates}
+                onclose={handleCloseTemplateModal}
+                ontemplatesapplied={handleTemplatesApplied}>
+            </c-capability-map-template-modal>
+        </template>
+
+        <template if:true={showBulkSizeModal}>
+            <c-bulk-operations-modal 
+                selected-capability-ids={selectedCapabilityIds}
+                onclose={handleCloseBulkModal}
+                onapplied={handleBulkApplied}>
+            </c-bulk-operations-modal>
+        </template>
+
+        <!-- Context Menu -->
+        <template if:true={showContextMenu}>
+            <div class="context-menu" style={contextMenuStyle}>
+                <div class="context-menu-item" onclick={handleContextEdit}>✏️ Edit</div>
+                <div class="context-menu-item" onclick={handleContextDuplicate}>📋 Duplicate</div>
+                <div class="context-menu-divider"></div>
+                <div class="context-menu-item" onclick={handleContextChangeSize}>🎨 Change Size</div>
+                <div class="context-menu-divider"></div>
+                <div class="context-menu-item danger" onclick={handleContextDelete}>🗑️ Delete</div>
+            </div>
+        </template>
+
+        <!-- Toast -->
+        <template if:true={showToast}>
+            <div class="toast-container">
+                <div class={toastClass}>{toastMessage}</div>
+            </div>
+        </template>
+    </div>
 </template>

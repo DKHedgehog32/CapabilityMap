@@ -1,3 +1,72 @@
-:host {
-    display: block;
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9000;
 }
+
+.modal {
+    background: white;
+    border-radius: 12px;
+    width: 90%; max-width: 360px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    animation: modalIn 0.2s ease;
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #E5E5E4;
+    display: flex; justify-content: space-between; align-items: center;
+}
+
+.modal-title { font-size: 16px; font-weight: 600; }
+
+.close-btn {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; border-radius: 6px;
+    cursor: pointer; color: #706E6B;
+}
+
+.modal-body { padding: 20px; }
+
+.size-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.size-option {
+    padding: 10px 6px;
+    border-radius: 6px;
+    text-align: center;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+}
+
+.size-option:hover { transform: scale(1.03); }
+.size-option.selected { border-color: #242424; }
+.size-option-code { font-weight: 700; font-size: 11px; }
+
+.modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid #E5E5E4;
+    display: flex; justify-content: flex-end; gap: 8px;
+    background: #FAFAF9;
+}
+
+.btn {
+    height: 36px; padding: 0 14px;
+    background: white; border: 1px solid #E5E5E4;
+    border-radius: 6px; color: #3D3D3C;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    cursor: pointer;
+}
+.btn:hover { background: #F3F3F3; }
+.btn.primary { background: #1B96FF; color: white; border: none; }

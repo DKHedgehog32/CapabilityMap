@@ -22,7 +22,7 @@ public with sharing class CapabilityTemplateController {
                     FROM Template_Categories__r ORDER BY Sort_Order__c)
             FROM Capability_Template__c
             WHERE Is_Active__c = true
-            WITH SECURITY_ENFORCED
+            
             ORDER BY Cloud_Category__c, Template_Name__c
         ];
     }
@@ -41,7 +41,7 @@ public with sharing class CapabilityTemplateController {
                    Is_Standard__c, Icon_Name__c, Description__c
             FROM Capability_Template__c
             WHERE Id = :templateId
-            WITH SECURITY_ENFORCED
+            
             LIMIT 1
         ];
         result.put('template', template);
@@ -50,7 +50,7 @@ public with sharing class CapabilityTemplateController {
             SELECT Id, Name, Sort_Order__c, Is_Subcategory__c, Description__c
             FROM Capability_Template_Category__c
             WHERE Capability_Template__c = :templateId
-            WITH SECURITY_ENFORCED
+            
             ORDER BY Sort_Order__c
         ];
         result.put('categories', categories);
@@ -60,7 +60,7 @@ public with sharing class CapabilityTemplateController {
                    Description__c, Capability_Template_Category__c
             FROM Capability_Template_Item__c
             WHERE Capability_Template_Category__r.Capability_Template__c = :templateId
-            WITH SECURITY_ENFORCED
+            
             ORDER BY Capability_Template_Category__c, Sort_Order__c
         ];
         result.put('items', items);
@@ -105,45 +105,62 @@ public with sharing class CapabilityTemplateController {
             // Map template category IDs to new category IDs
             Map<Id, Id> templateCatToNewCat = new Map<Id, Id>();
             
-            // Create categories
+            // Create categories (bulk insert for efficiency)
+            List<Capability_Category__c> catsToInsert = new List<Capability_Category__c>();
+            Map<String, Capability_Category__c> newCatsByName = new Map<String, Capability_Category__c>();
+            
             for (Capability_Template_Category__c templateCat : templateCategories) {
-                Id newCategoryId;
-                
                 if (mergeCategories && categoryNameToId.containsKey(templateCat.Name)) {
                     // Use existing category
-                    newCategoryId = categoryNameToId.get(templateCat.Name);
+                    templateCatToNewCat.put(templateCat.Id, categoryNameToId.get(templateCat.Name));
                 } else {
-                    // Create new category
+                    // Prepare new category for bulk insert
                     categoryOrder++;
                     Capability_Category__c newCat = new Capability_Category__c(
                         Name = templateCat.Name,
                         Capability_Map__c = mapId,
                         Sort_Order__c = categoryOrder,
-                        Is_Subcategory__c = templateCat.Is_Subcategory__c
+                        Is_Subcategory__c = templateCat.Is_Subcategory__c != null ? templateCat.Is_Subcategory__c : false
                     );
-                    insert newCat;
-                    createdCategories.add(newCat);
-                    newCategoryId = newCat.Id;
-                    categoryNameToId.put(templateCat.Name, newCategoryId);
+                    catsToInsert.add(newCat);
+                    newCatsByName.put(templateCat.Name + '_' + templateCat.Id, newCat);
                 }
-                
-                templateCatToNewCat.put(templateCat.Id, newCategoryId);
             }
             
-            // Create capabilities
+            // Bulk insert categories
+            if (!catsToInsert.isEmpty()) {
+                insert catsToInsert;
+                createdCategories.addAll(catsToInsert);
+            }
+            
+            // Map template category IDs to new category IDs
+            for (Capability_Template_Category__c templateCat : templateCategories) {
+                if (!templateCatToNewCat.containsKey(templateCat.Id)) {
+                    Capability_Category__c newCat = newCatsByName.get(templateCat.Name + '_' + templateCat.Id);
+                    templateCatToNewCat.put(templateCat.Id, newCat.Id);
+                    categoryNameToId.put(templateCat.Name, newCat.Id);
+                }
+            }
+            
+            // Create capabilities (bulk insert for efficiency)
+            List<Capability__c> capsToInsert = new List<Capability__c>();
             for (Capability_Template_Item__c item : templateItems) {
                 Id targetCategoryId = templateCatToNewCat.get(item.Capability_Template_Category__c);
                 
                 Capability__c newCap = new Capability__c(
                     Name = item.Name,
                     Capability_Category__c = targetCategoryId,
-                    Size__c = item.Default_Size__c,
+                    Size__c = String.isNotBlank(item.Default_Size__c) ? item.Default_Size__c : 'TBD',
                     Phase__c = String.isNotBlank(item.Default_Phase__c) ? item.Default_Phase__c : 'Phase 1',
-                    Sort_Order__c = item.Sort_Order__c,
+                    Sort_Order__c = item.Sort_Order__c != null ? item.Sort_Order__c : 1,
                     Description__c = item.Description__c
                 );
-                insert newCap;
-                createdCapabilities.add(newCap);
+                capsToInsert.add(newCap);
+            }
+            
+            if (!capsToInsert.isEmpty()) {
+                insert capsToInsert;
+                createdCapabilities.addAll(capsToInsert);
             }
         }
         
@@ -168,7 +185,7 @@ public with sharing class CapabilityTemplateController {
                    Applied_By__c, Applied_By__r.Name
             FROM Capability_Map_Template__c
             WHERE Capability_Map__c = :mapId
-            WITH SECURITY_ENFORCED
+            
             ORDER BY Applied_Date__c DESC
         ];
     }
@@ -179,7 +196,7 @@ public with sharing class CapabilityTemplateController {
             SELECT MAX(Sort_Order__c) maxOrder
             FROM Capability_Category__c
             WHERE Capability_Map__c = :mapId
-            WITH SECURITY_ENFORCED
+            
         ];
         Object maxOrder = results[0].get('maxOrder');
         return maxOrder != null ? Integer.valueOf(maxOrder) : 0;

@@ -12,7 +12,7 @@ public with sharing class CapabilityRoleController {
             SELECT Id, Name, Hourly_Rate__c, Color__c, Sort_Order__c, Description__c
             FROM Capability_Role__c
             WHERE Capability_Map__c = :mapId
-            WITH SECURITY_ENFORCED
+            
             ORDER BY Sort_Order__c
         ];
     }
@@ -22,7 +22,7 @@ public with sharing class CapabilityRoleController {
         Integer maxOrder = 0;
         AggregateResult[] results = [
             SELECT MAX(Sort_Order__c) maxOrder FROM Capability_Role__c 
-            WHERE Capability_Map__c = :mapId WITH SECURITY_ENFORCED
+            WHERE Capability_Map__c = :mapId 
         ];
         if (results[0].get('maxOrder') != null) {
             maxOrder = Integer.valueOf(results[0].get('maxOrder'));
@@ -48,12 +48,12 @@ public with sharing class CapabilityRoleController {
             Color__c = color
         );
         update role;
-        return [SELECT Id, Name, Hourly_Rate__c, Color__c, Sort_Order__c FROM Capability_Role__c WHERE Id = :roleId WITH SECURITY_ENFORCED];
+        return [SELECT Id, Name, Hourly_Rate__c, Color__c, Sort_Order__c FROM Capability_Role__c WHERE Id = :roleId ];
     }
     
     @AuraEnabled
     public static void deleteRole(Id roleId) {
-        delete [SELECT Id FROM Capability_Role__c WHERE Id = :roleId WITH SECURITY_ENFORCED];
+        delete [SELECT Id FROM Capability_Role__c WHERE Id = :roleId ];
     }
     
     @AuraEnabled
@@ -63,7 +63,7 @@ public with sharing class CapabilityRoleController {
                    Capability_Role__r.Color__c, Allocation_Percent__c, Allocated_Hours__c
             FROM Capability_Role_Assignment__c
             WHERE Capability__c = :capabilityId
-            WITH SECURITY_ENFORCED
+            
         ];
     }
     
@@ -76,7 +76,7 @@ public with sharing class CapabilityRoleController {
         );
         insert assignment;
         return [SELECT Id, Capability_Role__c, Capability_Role__r.Name, Allocation_Percent__c, Allocated_Hours__c 
-                FROM Capability_Role_Assignment__c WHERE Id = :assignment.Id WITH SECURITY_ENFORCED];
+                FROM Capability_Role_Assignment__c WHERE Id = :assignment.Id ];
     }
     
     @AuraEnabled
@@ -89,13 +89,13 @@ public with sharing class CapabilityRoleController {
     
     @AuraEnabled
     public static void deleteAssignment(Id assignmentId) {
-        delete [SELECT Id FROM Capability_Role_Assignment__c WHERE Id = :assignmentId WITH SECURITY_ENFORCED];
+        delete [SELECT Id FROM Capability_Role_Assignment__c WHERE Id = :assignmentId ];
     }
     
     @AuraEnabled
     public static void saveAssignments(Id capabilityId, List<Map<String, Object>> assignments) {
         // Delete existing assignments
-        delete [SELECT Id FROM Capability_Role_Assignment__c WHERE Capability__c = :capabilityId WITH SECURITY_ENFORCED];
+        delete [SELECT Id FROM Capability_Role_Assignment__c WHERE Capability__c = :capabilityId ];
         
         // Create new assignments
         List<Capability_Role_Assignment__c> newAssignments = new List<Capability_Role_Assignment__c>();

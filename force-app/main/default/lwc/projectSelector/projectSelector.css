@@ -1,14 +1,112 @@
-:host {
-    display: block;
-    min-width: 300px;
+.project-selector {
+    position: relative;
+    min-width: 280px;
 }
 
-.slds-dropdown {
-    position: absolute;
-    z-index: 9999;
+.loading-state {
+    padding: 8px 12px;
 }
 
-.slds-listbox__option:hover {
-    background-color: #f3f3f3;
+.selector-container,
+.standalone-container {
+    position: relative;
+    display: flex;
+    gap: 8px;
+}
+
+.selector-input {
+    flex: 1;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    color: white;
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.selector-input::placeholder {
+    color: rgba(255,255,255,0.6);
+}
+
+.selector-input:focus {
+    outline: none;
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.4);
+}
+
+.create-btn {
+    padding: 8px 16px;
+    background: #1B96FF;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
+    white-space: nowrap;
+}
+
+.create-btn:hover {
+    background: #0176D3;
+}
+
+.spinner-container {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    color: #242424;
+}
+
+.dropdown-item:hover {
+    background: #F3F3F3;
+}
+
+.project-icon {
+    font-size: 16px;
+}
+
+.project-info {
+    flex: 1;
+}
+
+.project-name {
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.project-status {
+    font-size: 11px;
+    color: #706E6B;
+}
+
+.dropdown-empty {
+    padding: 16px;
+    text-align: center;
+    color: #706E6B;
+    font-size: 13px;
 }

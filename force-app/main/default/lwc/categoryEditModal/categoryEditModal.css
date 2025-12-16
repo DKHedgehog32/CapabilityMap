@@ -1,3 +1,100 @@
-:host {
-    display: block;
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
 }
+
+.modal {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    animation: modalIn 0.2s ease;
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #E5E5E4;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title { font-size: 16px; font-weight: 600; }
+
+.close-btn {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; border-radius: 6px;
+    cursor: pointer; color: #706E6B;
+}
+.close-btn:hover { background: #F3F3F3; }
+
+.modal-body { padding: 20px; }
+
+.form-group { margin-bottom: 16px; }
+
+.form-label {
+    display: block;
+    font-size: 11px; font-weight: 600;
+    color: #514F4D;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.form-input {
+    width: 100%;
+    padding: 10px 12px;
+    background: #FAFAF9;
+    border: 1px solid #E5E5E4;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+}
+.form-input:focus {
+    outline: none;
+    border-color: #1B96FF;
+    background: white;
+}
+
+.form-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+.form-checkbox input { width: 16px; height: 16px; }
+
+.modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid #E5E5E4;
+    display: flex;
+    justify-content: space-between;
+    background: #FAFAF9;
+}
+
+.footer-right { display: flex; gap: 8px; margin-left: auto; }
+
+.btn {
+    height: 36px; padding: 0 14px;
+    background: white; border: 1px solid #E5E5E4;
+    border-radius: 6px; color: #3D3D3C;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    cursor: pointer;
+}
+.btn:hover { background: #F3F3F3; }
+.btn.primary { background: #1B96FF; color: white; border: none; }
+.btn.primary:hover { background: #0176D3; }
+.btn.danger { background: #EA001E; color: white; border: none; }

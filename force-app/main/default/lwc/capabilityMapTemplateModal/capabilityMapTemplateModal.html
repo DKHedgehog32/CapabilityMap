@@ -1,37 +1,67 @@
 <template>
-    <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_large">
-        <div class="slds-modal__container">
-            <header class="slds-modal__header">
-                <lightning-button-icon icon-name="utility:close" variant="bare-inverse" 
-                    class="slds-modal__close" onclick={handleClose}></lightning-button-icon>
-                <h2 class="slds-modal__title">Select Templates</h2>
-            </header>
+    <div class="modal-overlay" onclick={handleOverlayClick}>
+        <div class="modal wide" onclick={stopPropagation}>
+            <!-- Header - Blue gradient like mockup -->
+            <div class="modal-header blue">
+                <div>
+                    <div class="modal-title">☁️ Salesforce Cloud Templates</div>
+                    <div class="modal-subtitle">All capabilities start as TBD - you assign the sizing</div>
+                </div>
+                <button class="close-btn" onclick={handleClose}>✕</button>
+            </div>
             
-            <div class="slds-modal__content slds-p-around_medium">
+            <!-- Body -->
+            <div class="modal-body">
                 <template if:true={isLoading}>
-                    <lightning-spinner alternative-text="Loading"></lightning-spinner>
+                    <div class="loading-spinner">
+                        <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                    </div>
                 </template>
                 
                 <template if:false={isLoading}>
-                    <div class="slds-m-bottom_medium">
-                        <lightning-input type="checkbox" label="Merge duplicate category names" 
-                            checked={mergeCategories} onchange={handleMergeToggle}></lightning-input>
+                    <!-- Category Tabs -->
+                    <div class="template-tabs">
+                        <template for:each={templateCategories} for:item="cat">
+                            <button key={cat.name} class={cat.tabClass} data-category={cat.name} onclick={handleCategoryClick}>
+                                {cat.name}
+                            </button>
+                        </template>
                     </div>
                     
-                    <template for:each={groupedTemplates} for:item="group">
-                        <div key={group.category} class="slds-m-bottom_medium">
-                            <h3 class="slds-text-heading_small slds-m-bottom_x-small">{group.category}</h3>
-                            <div class="template-grid">
-                                <template for:each={group.items} for:item="template">
-                                    <div key={template.Id} 
-                                         class={template.cardClass}
-                                         data-id={template.Id}
-                                         onclick={handleTemplateToggle}>
-                                        <div class="template-name">{template.Template_Name__c}</div>
-                                        <div class="template-version">v{template.Version__c}</div>
-                                        <template if:true={template.isApplied}>
-                                            <lightning-badge label="Applied" class="slds-badge_inverse"></lightning-badge>
-                                        </template>
+                    <!-- Template Grid -->
+                    <div class="template-grid">
+                        <template for:each={filteredTemplates} for:item="template">
+                            <div key={template.Id} class={template.cardClass} data-id={template.Id} onclick={handleTemplateSelect}>
+                                <div class="template-icon">{template.Icon_Name__c}</div>
+                                <div class="template-name">{template.Template_Name__c}</div>
+                                <div class="template-desc">{template.Description__c}</div>
+                                <div class="template-stats">
+                                    <span>📁 {template.categoryCount}</span>
+                                    <span>📋 {template.capabilityCount}</span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <!-- Preview Section -->
+                    <template if:true={hasSelectedTemplate}>
+                        <div class="template-preview">
+                            <div class="preview-title">{selectedTemplateName} - Preview</div>
+                            <div class="preview-categories">
+                                <template for:each={previewCategories} for:item="category">
+                                    <div key={category.Id} class="preview-category">
+                                        <div class="preview-category-name">
+                                            <template if:true={category.Is_Subcategory__c}>↳ </template>
+                                            {category.Name}
+                                        </div>
+                                        <div class="preview-caps">
+                                            <template for:each={category.items} for:item="item">
+                                                <div key={item.Id} class="preview-cap">{item.Name}</div>
+                                            </template>
+                                            <template if:true={category.hasMore}>
+                                                <div class="preview-cap more">+{category.moreCount} more</div>
+                                            </template>
+                                        </div>
                                     </div>
                                 </template>
                             </div>
@@ -40,12 +70,13 @@
                 </template>
             </div>
             
-            <footer class="slds-modal__footer">
-                <lightning-button label="Cancel" onclick={handleClose}></lightning-button>
-                <lightning-button variant="brand" label="Apply Selected ({selectedCount})" 
-                    onclick={handleApply} disabled={hasNoSelectedTemplates}></lightning-button>
-            </footer>
+            <!-- Footer -->
+            <div class="modal-footer">
+                <button class="btn" onclick={handleClose}>Cancel</button>
+                <button class="btn orange" onclick={handleApply} disabled={applyDisabled}>
+                    Apply Template
+                </button>
+            </div>
         </div>
-    </section>
-    <div class="slds-backdrop slds-backdrop_open"></div>
+    </div>
 </template>

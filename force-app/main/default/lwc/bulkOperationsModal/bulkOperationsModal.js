@@ -1,25 +1,83 @@
+/**
+ * ============================================================
+ * bulkOperationsModal.js
+ * ============================================================
+ * @description    Modal for bulk operations on capabilities
+ *                 Allows changing size/phase for multiple items
+ * 
+ * @author         Cobra CRM B.V.
+ * @version        2.3.5
+ * 
+ * CHANGELOG:
+ * ─────────────────────────────────────────────────────────────
+ * v2.3.5  2024-12-15  Fixed bulkUpdateCapabilities call to use fields map
+ * v2.3.0  2024-12-15  Initial version
+ * ============================================================
+ */
 import { LightningElement, api, track } from 'lwc';
 import bulkUpdateCapabilities from '@salesforce/apex/CapabilityController.bulkUpdateCapabilities';
 
+const SIZES = [
+    { id: 'XS', label: 'XS', color: '#032D60', textColor: 'white' },
+    { id: 'S', label: 'S', color: '#0A4D8C', textColor: 'white' },
+    { id: 'M', label: 'M', color: '#0176D3', textColor: 'white' },
+    { id: 'L', label: 'L', color: '#1B96FF', textColor: 'white' },
+    { id: 'XL', label: 'XL', color: '#57B0FF', textColor: '#242424' },
+    { id: 'XXL', label: 'XXL', color: '#90CBFF', textColor: '#242424' },
+    { id: 'XXXL', label: 'XXXL', color: '#C3E1FF', textColor: '#3D3D3C' },
+    { id: 'TBD', label: 'TBD', color: '#E8E8E8', textColor: '#514F4D' }
+];
+
 export default class BulkOperationsModal extends LightningElement {
     @api selectedCapabilityIds = [];
-    @track size = '';
-    @track phase = '';
-    sizeOptions = [{ label: 'No Change', value: '' },{ label: 'XS', value: 'XS' },{ label: 'S', value: 'S' },{ label: 'M', value: 'M' },{ label: 'L', value: 'L' },{ label: 'XL', value: 'XL' },{ label: 'XXL', value: 'XXL' },{ label: 'XXXL', value: 'XXXL' }];
-    phaseOptions = [{ label: 'No Change', value: '' },{ label: 'Phase 1', value: 'Phase 1' },{ label: 'Phase 2', value: 'Phase 2' },{ label: 'Phase 3', value: 'Phase 3' },{ label: 'Phase 4', value: 'Phase 4' },{ label: 'Future', value: 'Future' },{ label: 'Out of Scope', value: 'Out of Scope' }];
+    @track selectedSize = '';
 
-    get selectedCount() { return this.selectedCapabilityIds.length; }
-    handleSizeChange(e) { this.size = e.detail.value; }
-    handlePhaseChange(e) { this.phase = e.detail.value; }
-    handleClose() { this.dispatchEvent(new CustomEvent('close')); }
+    get itemCount() {
+        return this.selectedCapabilityIds.length;
+    }
+
+    get sizeOptions() {
+        return SIZES.map(size => ({
+            ...size,
+            optionClass: size.id === this.selectedSize ? 'size-option selected' : 'size-option',
+            style: `background-color: ${size.color}; color: ${size.textColor};`
+        }));
+    }
+
+    handleSizeSelect(event) {
+        this.selectedSize = event.currentTarget.dataset.size;
+    }
+    
+    handleClose() { 
+        this.dispatchEvent(new CustomEvent('close')); 
+    }
 
     async handleApply() {
-        const fields = {};
-        if (this.size) fields.Size__c = this.size;
-        if (this.phase) fields.Phase__c = this.phase;
+        // Validate
+        if (!this.selectedSize) {
+            alert('Please select a size');
+            return;
+        }
+        if (!this.selectedCapabilityIds || this.selectedCapabilityIds.length === 0) {
+            alert('No capabilities selected');
+            return;
+        }
+
         try {
-            await bulkUpdateCapabilities({ capabilityIds: this.selectedCapabilityIds, fields });
+            // Build the fields map for Apex
+            const fields = {
+                'Size__c': this.selectedSize
+            };
+            
+            await bulkUpdateCapabilities({
+                capabilityIds: this.selectedCapabilityIds,
+                fields: fields
+            });
+            
             this.dispatchEvent(new CustomEvent('applied'));
-        } catch (e) { console.error(e); }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error: ' + (error.body?.message || error.message));
+        }
     }
 }

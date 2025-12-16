@@ -1,21 +1,36 @@
 /**
- * @description Modal for selecting and applying capability templates
- * @author Cobra CRM B.V.
- * @version 2.3.0
+ * @description    Salesforce Cloud Template Selector Modal
+ *                 Beautiful template picker matching the mockup design
+ * 
+ * @author         Cobra CRM B.V.
+ * @date           2024-12-15
+ * @version        2.3.0
  */
 import { LightningElement, api, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getActiveTemplates from '@salesforce/apex/CapabilityTemplateController.getActiveTemplates';
+import getTemplateWithItems from '@salesforce/apex/CapabilityTemplateController.getTemplateWithItems';
 import applyTemplates from '@salesforce/apex/CapabilityTemplateController.applyTemplates';
+
+// Template category groupings - must match Cloud_Category__c picklist values
+const TEMPLATE_CATEGORIES = [
+    'Core CRM',
+    'Marketing and Commerce',
+    'Industry Clouds',
+    'Integration and Platform',
+    'Data and Analytics',
+    'Collaboration'
+];
 
 export default class CapabilityMapTemplateModal extends LightningElement {
     @api mapId;
     @api appliedTemplates = [];
     
     @track templates = [];
-    @track selectedTemplateIds = [];
+    @track selectedTemplateId = null;
+    @track selectedTemplateData = null;
+    @track activeCategory = 'Core CRM';
     @track isLoading = false;
-    @track mergeCategories = true;
 
     connectedCallback() {
         this.loadTemplates();
@@ -24,7 +39,13 @@ export default class CapabilityMapTemplateModal extends LightningElement {
     async loadTemplates() {
         this.isLoading = true;
         try {
-            this.templates = await getActiveTemplates();
+            const result = await getActiveTemplates();
+            // Calculate counts from child relationship data
+            this.templates = result.map(t => ({
+                ...t,
+                categoryCount: t.Template_Categories__r ? t.Template_Categories__r.length : 0,
+                capabilityCount: 0 // Will be loaded when template is selected
+            }));
         } catch (error) {
             console.error('Error loading templates:', error);
         } finally {
@@ -32,48 +53,97 @@ export default class CapabilityMapTemplateModal extends LightningElement {
         }
     }
 
-    get groupedTemplates() {
-        const groups = {};
-        this.templates.forEach(t => {
-            const cat = t.Cloud_Category__c || 'Other';
-            if (!groups[cat]) groups[cat] = [];
-            
-            const isSelected = this.selectedTemplateIds.includes(t.Id);
-            const isApplied = this.appliedTemplates.some(at => at.Capability_Template__c === t.Id);
-            
-            groups[cat].push({
+    // ============================================
+    // GETTERS
+    // ============================================
+    get templateCategories() {
+        return TEMPLATE_CATEGORIES.map(name => ({
+            name,
+            tabClass: name === this.activeCategory ? 'template-tab active' : 'template-tab'
+        }));
+    }
+
+    get filteredTemplates() {
+        return this.templates
+            .filter(t => t.Cloud_Category__c === this.activeCategory)
+            .map(t => ({
                 ...t,
-                isSelected: isSelected,
-                isApplied: isApplied,
-                cardClass: isSelected ? 'template-card selected' : 'template-card'
-            });
+                cardClass: t.Id === this.selectedTemplateId 
+                    ? 'template-card selected' 
+                    : 'template-card'
+            }));
+    }
+
+    get hasSelectedTemplate() {
+        return this.selectedTemplateId && this.selectedTemplateData;
+    }
+
+    get selectedTemplateName() {
+        const template = this.templates.find(t => t.Id === this.selectedTemplateId);
+        return template ? template.Template_Name__c : '';
+    }
+
+    get previewCategories() {
+        if (!this.selectedTemplateData || !this.selectedTemplateData.categories) {
+            return [];
+        }
+        
+        return this.selectedTemplateData.categories.map(cat => {
+            const items = cat.items || [];
+            const displayItems = items.slice(0, 4);
+            const hasMore = items.length > 4;
+            
+            return {
+                ...cat,
+                items: displayItems,
+                hasMore,
+                moreCount: items.length - 4
+            };
         });
-        return Object.entries(groups).map(([category, items]) => ({ category, items }));
     }
 
-    get hasSelectedTemplates() {
-        return this.selectedTemplateIds.length > 0;
+    get applyDisabled() {
+        return !this.selectedTemplateId;
     }
 
-    get hasNoSelectedTemplates() {
-        return this.selectedTemplateIds.length === 0;
+    // ============================================
+    // HANDLERS
+    // ============================================
+    handleCategoryClick(event) {
+        this.activeCategory = event.currentTarget.dataset.category;
+        this.selectedTemplateId = null;
+        this.selectedTemplateData = null;
     }
 
-    get selectedCount() {
-        return this.selectedTemplateIds.length;
-    }
-
-    handleTemplateToggle(event) {
+    async handleTemplateSelect(event) {
         const templateId = event.currentTarget.dataset.id;
-        if (this.selectedTemplateIds.includes(templateId)) {
-            this.selectedTemplateIds = this.selectedTemplateIds.filter(id => id !== templateId);
-        } else {
-            this.selectedTemplateIds = [...this.selectedTemplateIds, templateId];
+        this.selectedTemplateId = templateId;
+        
+        // Load template details for preview
+        try {
+            this.selectedTemplateData = await getTemplateWithItems({ templateId });
+            
+            // Update capability count on the template card
+            const itemCount = this.selectedTemplateData.items ? this.selectedTemplateData.items.length : 0;
+            this.templates = this.templates.map(t => {
+                if (t.Id === templateId) {
+                    return { ...t, capabilityCount: itemCount };
+                }
+                return t;
+            });
+        } catch (error) {
+            console.error('Error loading template details:', error);
         }
     }
 
-    handleMergeToggle(event) {
-        this.mergeCategories = event.target.checked;
+    handleOverlayClick(event) {
+        if (event.target === event.currentTarget) {
+            this.handleClose();
+        }
+    }
+
+    stopPropagation(event) {
+        event.stopPropagation();
     }
 
     handleClose() {
@@ -81,27 +151,38 @@ export default class CapabilityMapTemplateModal extends LightningElement {
     }
 
     async handleApply() {
-        if (!this.hasSelectedTemplates) return;
+        if (!this.selectedTemplateId) return;
+        
+        // Validate mapId exists
+        if (!this.mapId) {
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Error',
+                message: 'No Capability Map selected. Please select a map first.',
+                variant: 'error'
+            }));
+            return;
+        }
         
         this.isLoading = true;
         try {
-            const result = await applyTemplates({
+            await applyTemplates({
                 mapId: this.mapId,
-                templateIds: this.selectedTemplateIds,
-                mergeCategories: this.mergeCategories
+                templateIds: [this.selectedTemplateId],
+                mergeCategories: true
             });
             
             this.dispatchEvent(new ShowToastEvent({
                 title: 'Success',
-                message: `Applied ${result.categoryCount} categories and ${result.capabilityCount} capabilities`,
+                message: 'Template applied successfully',
                 variant: 'success'
             }));
             
             this.dispatchEvent(new CustomEvent('templatesapplied'));
         } catch (error) {
+            console.error('Error applying template:', error);
             this.dispatchEvent(new ShowToastEvent({
                 title: 'Error',
-                message: error.body?.message || 'Failed to apply templates',
+                message: error.body?.message || 'Failed to apply template',
                 variant: 'error'
             }));
         } finally {

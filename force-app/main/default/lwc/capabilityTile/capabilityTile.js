@@ -25,6 +25,10 @@ export default class CapabilityTile extends LightningElement {
         return `background-color: ${color}`;
     }
 
+    get displayHours() {
+        return this.capability?.Calculated_Hours__c || 0;
+    }
+
     get assignedRoles() {
         if (!this.capability || !this.roleAssignments) return [];
         return this.roleAssignments

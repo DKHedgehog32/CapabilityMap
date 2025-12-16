@@ -45,7 +45,7 @@ public with sharing class TemplateAdminService {
     
     @AuraEnabled
     public static void deleteTemplate(Id templateId) {
-        delete [SELECT Id FROM Capability_Template__c WHERE Id = :templateId WITH SECURITY_ENFORCED];
+        delete [SELECT Id FROM Capability_Template__c WHERE Id = :templateId ];
     }
     
     @AuraEnabled
