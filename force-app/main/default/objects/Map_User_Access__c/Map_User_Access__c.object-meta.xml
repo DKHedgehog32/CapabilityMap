@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Tracks user access to Capability Maps for favorites/recently viewed</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableReports>true</enableReports>
+    <enableSearch>false</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Map User Access</label>
+    <nameField>
+        <displayFormat>MUA-{000000000}</displayFormat>
+        <label>Access ID</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>Map User Accesses</pluralLabel>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

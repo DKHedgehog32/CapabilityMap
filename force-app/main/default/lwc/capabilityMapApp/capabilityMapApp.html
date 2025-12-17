@@ -18,7 +18,7 @@
                     <span class={statusBadgeClass}>{statusText}</span>
                 </template>
                 <template if:false={hasMap}>
-                    <c-project-selector onprojectselected={handleProjectSelected}></c-project-selector>
+                    <span class="title-placeholder">Select or create a Capability Map</span>
                 </template>
             </div>
             
@@ -40,43 +40,153 @@
         <div class="main-content">
             <!-- SIDEBAR -->
             <aside class="sidebar">
-                <div class="sidebar-header">
-                    <div class="sidebar-title">
-                        <span>Categories</span>
-                        <button onclick={handleAddCategory}>+</button>
-                    </div>
+                <!-- FILTERS - Standalone section at top -->
+                <div class="sidebar-section filters-section">
+                    <div class="section-title">Filters</div>
                     <div class="search-box">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="11" cy="11" r="8"/>
                             <path d="M21 21l-4.35-4.35"/>
                         </svg>
-                        <input type="text" placeholder="Search..." value={searchTerm} onkeyup={handleSearchChange}>
+                        <input type="text" placeholder="Search capabilities..." value={searchTerm} onkeyup={handleSearchChange}>
                     </div>
+                    
+                    <!-- Phase Filter -->
+                    <div class="filter-group">
+                        <div class="filter-label">Phase</div>
+                        <div class="filter-chips">
+                            <template for:each={phaseFilterOptions} for:item="phase">
+                                <button key={phase.value} 
+                                        class={phase.chipClass} 
+                                        data-value={phase.value}
+                                        onclick={handlePhaseFilterClick}>
+                                    {phase.label}
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <!-- Size Filter -->
+                    <div class="filter-group">
+                        <div class="filter-label">Size</div>
+                        <div class="filter-chips">
+                            <template for:each={sizeFilterOptions} for:item="size">
+                                <button key={size.value} 
+                                        class={size.chipClass} 
+                                        data-value={size.value}
+                                        onclick={handleSizeFilterClick}>
+                                    {size.label}
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <!-- Clear Filters -->
+                    <template if:true={hasActiveFilters}>
+                        <button class="clear-filters-btn" onclick={handleClearFilters}>
+                            ✕ Clear Filters
+                        </button>
+                    </template>
                 </div>
                 
                 <div class="sidebar-content">
-                    <!-- Category List -->
-                    <div class="category-list">
-                        <template for:each={categoriesWithCount} for:item="cat">
-                            <div key={cat.Id} class={cat.itemClass} data-id={cat.Id} onclick={handleCategoryClick}>
-                                <span class="cat-name">{cat.Name}</span>
-                                <span class="cat-count">{cat.capabilityCount}</span>
-                                <div class="cat-actions">
-                                    <button data-id={cat.Id} onclick={handleEditCategory}>✏️</button>
-                                    <button class="delete" data-id={cat.Id} onclick={handleDeleteCategory}>🗑️</button>
+                    <!-- Projects Section (Recent + New Map combined, collapsible) -->
+                    <div class="sidebar-section projects-section">
+                        <div class="section-title collapsible" onclick={toggleProjectsSection}>
+                            <span>{projectsSectionIcon} Projects</span>
+                            <template if:true={hasFavorites}>
+                                <span class="section-count">{myFavorites.length}</span>
+                            </template>
+                        </div>
+                        <template if:true={projectsSectionExpanded}>
+                            <div class="projects-content">
+                                <!-- New Map -->
+                                <div class="new-map-area">
+                                    <c-project-selector onprojectselected={handleProjectSelected}></c-project-selector>
                                 </div>
+                                
+                                <!-- Recent Projects List -->
+                                <template if:true={hasFavorites}>
+                                    <div class="recent-label">Recent</div>
+                                    <div class="favorites-list">
+                                        <template for:each={myFavorites} for:item="fav">
+                                            <div key={fav.id} class="favorite-item" data-id={fav.id} onclick={handleFavoriteClick}>
+                                                <span class={fav.starClass} data-id={fav.id} onclick={handleToggleFavorite} title="Toggle favorite">{fav.starIcon}</span>
+                                                <span class="favorite-name">{fav.name}</span>
+                                                <span class="favorite-time">{fav.lastAccessedFormatted}</span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                     </div>
                     
-                    <!-- Size Legend -->
-                    <div class="sidebar-title"><span>Sizing</span></div>
-                    <div class="size-legend">
-                        <template for:each={sizeLegendItems} for:item="size">
-                            <div key={size.id} class={size.itemClass} data-size={size.id} onclick={handleSizeFilterToggle}>
-                                <div class="size-color" style={size.colorStyle}>{size.label}</div>
-                                <div class="size-info">{size.description}</div>
-                                <span class="size-count">{size.count}</span>
+                    <!-- Selection Actions (when items selected) -->
+                    <template if:true={hasSelection}>
+                        <div class="sidebar-section">
+                            <div class="section-title">{selectedCount} Selected</div>
+                            <div class="action-buttons">
+                                <button class="action-btn" onclick={handleBulkChangeSize}>
+                                    <span class="action-icon">📐</span> Change Size
+                                </button>
+                                <template if:true={selectedHaveSizes}>
+                                    <button class="action-btn secondary" onclick={handleResetSize}>
+                                        <span class="action-icon">↩️</span> Reset Size
+                                    </button>
+                                </template>
+                                <button class="action-btn" onclick={handleBulkChangePhase}>
+                                    <span class="action-icon">📅</span> Change Phase
+                                </button>
+                                <template if:true={selectedHavePhases}>
+                                    <button class="action-btn secondary" onclick={handleResetPhase}>
+                                        <span class="action-icon">↩️</span> Reset Phase
+                                    </button>
+                                </template>
+                                <button class="action-btn" onclick={handleBulkAssignTeam}>
+                                    <span class="action-icon">👥</span> Assign Team
+                                </button>
+                                <button class="action-btn danger" onclick={handleBulkDelete}>
+                                    <span class="action-icon">🗑️</span> Delete
+                                </button>
+                                <button class="action-btn secondary" onclick={handleClearSelection}>
+                                    <span class="action-icon">✕</span> Clear Selection
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    <!-- Colors & Phases Section -->
+                    <div class="sidebar-section">
+                        <div class="section-title">Colors & Phases</div>
+                        <template for:each={colorBreakdown} for:item="colorGroup">
+                            <div key={colorGroup.color} class="color-group">
+                                <div class="color-group-header" data-color={colorGroup.color} onclick={toggleColorGroup}>
+                                    <div class="color-indicator" style={colorGroup.colorStyle}></div>
+                                    <span class="color-name">{colorGroup.name}</span>
+                                    <template if:true={colorGroup.hasPhase}>
+                                        <span class="phase-label">{colorGroup.phaseLabel}</span>
+                                    </template>
+                                    <span class="color-total">{colorGroup.total}</span>
+                                    <span class="expand-icon">{colorGroup.expandIcon}</span>
+                                </div>
+                                <template if:true={colorGroup.isExpanded}>
+                                    <div class="size-breakdown">
+                                        <template for:each={colorGroup.sizes} for:item="sizeItem">
+                                            <div key={sizeItem.size} class="size-row">
+                                                <span class="size-badge" style={sizeItem.badgeStyle}>{sizeItem.size}</span>
+                                                <span class="size-label">{sizeItem.label}</span>
+                                                <span class="size-count">{sizeItem.count}</span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        <template if:false={hasColoredCapabilities}>
+                            <div class="empty-state">
+                                <p>No colors assigned yet</p>
+                                <p class="empty-hint">Select capabilities and click a color to assign</p>
                             </div>
                         </template>
                     </div>
@@ -85,7 +195,6 @@
                 <div class="sidebar-footer">
                     <div class="stats-row"><span>Categories</span><span>{categoryCount}</span></div>
                     <div class="stats-row"><span>Capabilities</span><span>{capabilityCount}</span></div>
-                    <div class="stats-row"><span>Selected</span><span>{selectedCount}</span></div>
                     <div class="stats-row"><span>Total Hours</span><span>{totalHours}</span></div>
                 </div>
             </aside>
@@ -95,20 +204,37 @@
                 <!-- Canvas Toolbar -->
                 <div class="canvas-toolbar">
                     <div class="tool-group">
+                        <label class="select-all-label" title="Select/deselect all capabilities">
+                            <input type="checkbox" checked={allSelected} onchange={handleSelectAllChange}>
+                            <span>Select All</span>
+                        </label>
                         <button class={allFilterClass} onclick={handleFilterAll}>All</button>
                         <button class={sizedFilterClass} onclick={handleFilterSized}>Sized</button>
                         <button class={tbdFilterClass} onclick={handleFilterTbd}>TBD Only</button>
                     </div>
                     
-                    <template if:true={hasSelection}>
-                        <div class="selection-info">
-                            <span><strong>{selectedCount}</strong> selected</span>
-                            <div class="selection-actions">
-                                <button onclick={handleBulkChangeSize}>Change Size</button>
-                                <button class="danger" onclick={handleBulkDelete}>Delete</button>
+                    <!-- Color Palette in Toolbar -->
+                    <div class="toolbar-colors">
+                        <template for:each={colorOptions} for:item="color">
+                            <div key={color.id} 
+                                 class={color.squareClass}
+                                 style={color.style}
+                                 data-color={color.hex}
+                                 onclick={handleColorSelect}
+                                 title={color.name}>
                             </div>
-                        </div>
-                    </template>
+                        </template>
+                        <label class="apply-all-label" title="Override phase-color lock and apply to all capabilities">
+                            <input type="checkbox" checked={applyColorToAll} onchange={handleApplyAllChange}>
+                            <span>All phases</span>
+                        </label>
+                        <template if:true={hasUnsavedChanges}>
+                            <button class="save-colors-btn" onclick={handleSaveColors}>Save</button>
+                        </template>
+                        <template if:true={hasColoredCapabilities}>
+                            <button class="reset-btn" onclick={handleResetAllColors} title="Clear all colors">Reset</button>
+                        </template>
+                    </div>
                     
                     <div class="zoom-group">
                         <button class="zoom-btn" onclick={handleZoomOut}>−</button>
@@ -131,6 +257,7 @@
                                 <template for:each={category.capabilities} for:item="cap">
                                     <div key={cap.Id} 
                                          class={cap.tileClass}
+                                         style={cap.tileStyle}
                                          data-size={cap.Size__c}
                                          data-id={cap.Id}
                                          draggable="true"
@@ -139,11 +266,14 @@
                                          oncontextmenu={handleTileContextMenu}
                                          ondragstart={handleDragStart}
                                          ondragend={handleDragEnd}>
-                                        <div class="checkbox" data-id={cap.Id} onclick={handleCheckboxClick}>
-                                            <template if:true={cap.isSelected}>✓</template>
+                                        <div class="tile-content">
+                                            <span class="tile-name">{cap.Name}</span>
+                                            <div class="tile-meta">
+                                                <span class="tile-size">{cap.Size__c}</span>
+                                                <span class="tile-phase">{cap.displayPhase}</span>
+                                                <span class="tile-hours">{cap.displayHours}h</span>
+                                            </div>
                                         </div>
-                                        <span class="tile-name">{cap.Name}</span>
-                                        <span class="tile-hours">{cap.displayHours}h</span>
                                         <span class="grip">⋮⋮</span>
                                     </div>
                                 </template>
@@ -214,8 +344,28 @@
         <template if:true={showBulkSizeModal}>
             <c-bulk-operations-modal 
                 selected-capability-ids={selectedCapabilityIds}
+                operation-type="size"
                 onclose={handleCloseBulkModal}
                 onapplied={handleBulkApplied}>
+            </c-bulk-operations-modal>
+        </template>
+
+        <template if:true={showBulkPhaseModal}>
+            <c-bulk-operations-modal 
+                selected-capability-ids={selectedCapabilityIds}
+                operation-type="phase"
+                onclose={handleCloseBulkPhaseModal}
+                onapplied={handleBulkPhaseApplied}>
+            </c-bulk-operations-modal>
+        </template>
+
+        <template if:true={showBulkTeamModal}>
+            <c-bulk-operations-modal 
+                selected-capability-ids={selectedCapabilityIds}
+                operation-type="team"
+                map-id={mapId}
+                onclose={handleCloseBulkTeamModal}
+                onapplied={handleBulkTeamApplied}>
             </c-bulk-operations-modal>
         </template>
 

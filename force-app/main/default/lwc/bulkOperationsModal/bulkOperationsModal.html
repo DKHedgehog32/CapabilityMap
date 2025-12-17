@@ -2,24 +2,74 @@
     <div class="modal-overlay" onclick={handleOverlayClick}>
         <div class="modal" onclick={stopPropagation}>
             <div class="modal-header">
-                <div class="modal-title">Change Size ({selectedCount} items)</div>
+                <div class="modal-title">{modalTitle}</div>
                 <button class="close-btn" onclick={handleClose}>✕</button>
             </div>
             
             <div class="modal-body">
-                <div class="size-grid">
-                    <template for:each={sizeOptions} for:item="size">
-                        <div key={size.id} class={size.optionClass} data-size={size.id} 
-                             style={size.style} onclick={handleSizeSelect}>
-                            <div class="size-option-code">{size.label}</div>
+                <!-- Size Selection -->
+                <template if:true={isSizeOperation}>
+                    <div class="size-grid">
+                        <template for:each={sizeOptions} for:item="size">
+                            <div key={size.id} class={size.optionClass} data-size={size.id} 
+                                 style={size.style} onclick={handleSizeSelect}>
+                                <div class="size-option-code">{size.label}</div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Phase Selection -->
+                <template if:true={isPhaseOperation}>
+                    <div class="phase-grid">
+                        <template for:each={phaseOptions} for:item="phase">
+                            <div key={phase.id} class={phase.optionClass} data-phase={phase.id} 
+                                 style={phase.style} onclick={handlePhaseSelect}>
+                                <div class="phase-option-label">{phase.label}</div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Team Member Selection -->
+                <template if:true={isTeamOperation}>
+                    <template if:true={isLoading}>
+                        <div class="loading-container">
+                            <lightning-spinner alternative-text="Loading..." size="small"></lightning-spinner>
                         </div>
                     </template>
-                </div>
+                    <template if:false={isLoading}>
+                        <template if:true={hasRoles}>
+                            <div class="team-form">
+                                <div class="form-group">
+                                    <label class="form-label">Team Member / Role</label>
+                                    <select class="form-select" onchange={handleRoleChange}>
+                                        <option value="">-- Select Role --</option>
+                                        <template for:each={roleOptions} for:item="role">
+                                            <option key={role.value} value={role.value}>{role.label}</option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Allocation %</label>
+                                    <input type="number" class="form-input" min="0" max="100" 
+                                           value={allocationPercent} onchange={handleAllocationChange}>
+                                </div>
+                            </div>
+                        </template>
+                        <template if:false={hasRoles}>
+                            <div class="empty-state">
+                                <p>No roles defined for this map.</p>
+                                <p class="hint">Add roles in the map settings first.</p>
+                            </div>
+                        </template>
+                    </template>
+                </template>
             </div>
             
             <div class="modal-footer">
                 <button class="btn" onclick={handleClose}>Cancel</button>
-                <button class="btn primary" onclick={handleApply}>Apply</button>
+                <button class="btn primary" onclick={handleApply} disabled={isLoading}>Apply</button>
             </div>
         </div>
     </div>

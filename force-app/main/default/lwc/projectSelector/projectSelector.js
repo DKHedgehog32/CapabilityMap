@@ -1,9 +1,19 @@
 /**
- * @description    Project Selector for Klient PSA integration
- *                 Falls back to standalone mode if Klient not installed
+ * ============================================================
+ * projectSelector.js
+ * ============================================================
+ * @description    Collapsible Project Selector for sidebar
+ *                 Allows linking to project OR creating standalone map
  * 
  * @author         Cobra CRM B.V.
- * @version        2.3.2
+ * @version        2.3.9
+ * 
+ * CHANGELOG:
+ * ─────────────────────────────────────────────────────────────
+ * v2.3.9  2024-12-16  Fixed dropdown visibility with fixed positioning
+ * v2.3.8  2024-12-16  Made collapsible for sidebar placement
+ * v2.3.7  2024-12-16  Added option for standalone map
+ * ============================================================
  */
 import { LightningElement, track } from 'lwc';
 import isKlientAvailable from '@salesforce/apex/KlientIntegrationService.isKlientAvailable';
@@ -14,8 +24,11 @@ export default class ProjectSelector extends LightningElement {
     @track projects = [];
     @track isSearching = false;
     @track showDropdown = false;
-    @track klientAvailable = null; // null = checking, true/false = result
-    @track standaloneMapName = 'New Capability Map';
+    @track klientAvailable = null;
+    @track standaloneMapName = '';
+    @track mode = 'project';
+    @track isExpanded = true;
+    @track dropdownStyle = '';
 
     searchTimeout;
 
@@ -32,20 +45,48 @@ export default class ProjectSelector extends LightningElement {
         }
     }
 
+    toggleExpanded() {
+        this.isExpanded = !this.isExpanded;
+    }
+
+    get expandIcon() {
+        return this.isExpanded ? '▼' : '▶';
+    }
+
     get isLoading() {
         return this.klientAvailable === null;
     }
 
-    get showKlientSearch() {
+    get showModeToggle() {
         return this.klientAvailable === true;
     }
 
+    get showKlientSearch() {
+        return this.klientAvailable === true && this.mode === 'project';
+    }
+
     get showStandaloneInput() {
-        return this.klientAvailable === false;
+        return this.klientAvailable === false || this.mode === 'standalone';
     }
 
     get hasProjects() {
         return this.projects.length > 0;
+    }
+
+    get projectModeClass() {
+        return this.mode === 'project' ? 'mode-btn active' : 'mode-btn';
+    }
+
+    get standaloneModeClass() {
+        return this.mode === 'standalone' ? 'mode-btn active' : 'mode-btn';
+    }
+
+    handleModeChange(event) {
+        this.mode = event.currentTarget.dataset.mode;
+        this.searchTerm = '';
+        this.projects = [];
+        this.showDropdown = false;
+        this.standaloneMapName = '';
     }
 
     handleSearchChange(event) {
@@ -67,13 +108,18 @@ export default class ProjectSelector extends LightningElement {
         this.isSearching = true;
         try {
             const result = await getProjects({ searchTerm: this.searchTerm });
-            // Convert the result to expected format
             this.projects = result.map(p => ({
                 Id: p.Id,
                 Name: p.Name,
                 Krow__Project_Status__c: p.Status || 'Active'
             }));
-            this.showDropdown = this.projects.length > 0;
+            
+            if (this.projects.length > 0) {
+                this.positionDropdown();
+                this.showDropdown = true;
+            } else {
+                this.showDropdown = false;
+            }
         } catch (error) {
             console.error('Error searching projects:', error);
             this.projects = [];
@@ -82,14 +128,23 @@ export default class ProjectSelector extends LightningElement {
         }
     }
 
+    positionDropdown() {
+        // Get the input element position
+        const input = this.template.querySelector('.selector-input');
+        if (input) {
+            const rect = input.getBoundingClientRect();
+            this.dropdownStyle = `top: ${rect.bottom + 4}px; left: ${rect.left}px; width: ${rect.width}px;`;
+        }
+    }
+
     handleFocus() {
         if (this.projects.length > 0) {
+            this.positionDropdown();
             this.showDropdown = true;
         }
     }
 
     handleBlur() {
-        // Delay to allow click to register
         setTimeout(() => {
             this.showDropdown = false;
         }, 200);
@@ -106,6 +161,7 @@ export default class ProjectSelector extends LightningElement {
                     projectName: project.Name
                 }
             }));
+            this.isExpanded = false;
         }
         
         this.showDropdown = false;
@@ -122,9 +178,16 @@ export default class ProjectSelector extends LightningElement {
         
         this.dispatchEvent(new CustomEvent('projectselected', {
             detail: {
-                projectId: null, // No project linked
-                projectName: this.standaloneMapName
+                projectId: null,
+                projectName: this.standaloneMapName.trim()
             }
         }));
+        this.isExpanded = false;
+    }
+
+    handleStandaloneKeyUp(event) {
+        if (event.key === 'Enter') {
+            this.handleCreateStandaloneMap();
+        }
     }
 }

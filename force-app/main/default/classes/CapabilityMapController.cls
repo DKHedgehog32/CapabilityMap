@@ -134,7 +134,7 @@ public with sharing class CapabilityMapController {
         
         // Get capabilities
         List<Capability__c> capabilities = [
-            SELECT Id, Name, Size__c, Phase__c, Sort_Order__c, 
+            SELECT Id, Name, Size__c, Phase__c, Sort_Order__c, Color__c,
                    Calculated_Hours__c, Hours_Override__c, Description__c,
                    Capability_Category__c, ArchiMate_Id__c
             FROM Capability__c
@@ -174,6 +174,15 @@ public with sharing class CapabilityMapController {
             ORDER BY Applied_Date__c DESC
         ];
         result.put('appliedTemplates', appliedTemplates);
+        
+        // Get custom phase colors
+        List<Phase_Color__c> phaseColors = [
+            SELECT Id, Name, Color__c, Sort_Order__c
+            FROM Phase_Color__c
+            WHERE Capability_Map__c = :mapId
+            ORDER BY Sort_Order__c
+        ];
+        result.put('phaseColors', phaseColors);
         
         return result;
     }
@@ -257,6 +266,49 @@ public with sharing class CapabilityMapController {
         return newMap;
     }
     
+    /**
+     * @description Save phase colors for a map
+     * @param mapId The map ID
+     * @param phaseColors List of phase color objects with Name and Color__c
+     */
+    @AuraEnabled
+    public static void savePhaseColors(Id mapId, List<Map<String, Object>> phaseColors) {
+        // Delete existing phase colors for this map
+        delete [SELECT Id FROM Phase_Color__c WHERE Capability_Map__c = :mapId];
+        
+        // Insert new phase colors
+        if (phaseColors != null && !phaseColors.isEmpty()) {
+            List<Phase_Color__c> toInsert = new List<Phase_Color__c>();
+            Integer sortOrder = 1;
+            
+            for (Map<String, Object> pc : phaseColors) {
+                toInsert.add(new Phase_Color__c(
+                    Name = (String)pc.get('name'),
+                    Color__c = (String)pc.get('color'),
+                    Sort_Order__c = sortOrder++,
+                    Capability_Map__c = mapId
+                ));
+            }
+            
+            insert toInsert;
+        }
+    }
+    
+    /**
+     * @description Get phase colors for a map
+     * @param mapId The map ID
+     * @return List of phase colors
+     */
+    @AuraEnabled(cacheable=true)
+    public static List<Phase_Color__c> getPhaseColors(Id mapId) {
+        return [
+            SELECT Id, Name, Color__c, Sort_Order__c
+            FROM Phase_Color__c
+            WHERE Capability_Map__c = :mapId
+            ORDER BY Sort_Order__c
+        ];
+    }
+    
     // Private helper method
     private static Capability_Map__c getMapById(Id mapId) {
         List<Capability_Map__c> maps = [
@@ -270,5 +322,119 @@ public with sharing class CapabilityMapController {
             LIMIT 1
         ];
         return maps.isEmpty() ? null : maps[0];
+    }
+
+    /**
+     * ─────────────────────────────────────────────────────────────────────────
+     * Get user's favorite and recently accessed maps
+     * ─────────────────────────────────────────────────────────────────────────
+     */
+    @AuraEnabled(cacheable=true)
+    public static List<Map<String, Object>> getMyFavorites() {
+        Id currentUserId = UserInfo.getUserId();
+        List<Map<String, Object>> results = new List<Map<String, Object>>();
+        
+        // Get user's map accesses, ordered by favorites first, then last accessed
+        List<Map_User_Access__c> accesses = [
+            SELECT Id, Capability_Map__c, Capability_Map__r.Name, 
+                   Capability_Map__r.Status__c, Capability_Map__r.Last_Saved__c,
+                   Is_Favorite__c, Last_Accessed__c, Access_Count__c
+            FROM Map_User_Access__c
+            WHERE User__c = :currentUserId
+              AND Capability_Map__c != null
+            ORDER BY Is_Favorite__c DESC, Last_Accessed__c DESC
+            LIMIT 10
+        ];
+        
+        for (Map_User_Access__c access : accesses) {
+            Map<String, Object> item = new Map<String, Object>();
+            item.put('id', access.Capability_Map__c);
+            item.put('accessId', access.Id);
+            item.put('name', access.Capability_Map__r.Name);
+            item.put('status', access.Capability_Map__r.Status__c);
+            item.put('lastSaved', access.Capability_Map__r.Last_Saved__c);
+            item.put('isFavorite', access.Is_Favorite__c);
+            item.put('lastAccessed', access.Last_Accessed__c);
+            item.put('accessCount', access.Access_Count__c);
+            results.add(item);
+        }
+        
+        return results;
+    }
+
+    /**
+     * ─────────────────────────────────────────────────────────────────────────
+     * Track user accessing a map (upsert access record)
+     * ─────────────────────────────────────────────────────────────────────────
+     */
+    @AuraEnabled
+    public static void trackMapAccess(Id mapId) {
+        Id currentUserId = UserInfo.getUserId();
+        
+        // Check if access record already exists
+        List<Map_User_Access__c> existing = [
+            SELECT Id, Access_Count__c
+            FROM Map_User_Access__c
+            WHERE User__c = :currentUserId AND Capability_Map__c = :mapId
+            LIMIT 1
+        ];
+        
+        Map_User_Access__c access;
+        if (!existing.isEmpty()) {
+            // Update existing
+            access = existing[0];
+            access.Last_Accessed__c = DateTime.now();
+            access.Access_Count__c = (access.Access_Count__c == null ? 0 : access.Access_Count__c) + 1;
+        } else {
+            // Create new
+            access = new Map_User_Access__c(
+                User__c = currentUserId,
+                Capability_Map__c = mapId,
+                Last_Accessed__c = DateTime.now(),
+                Access_Count__c = 1,
+                Is_Favorite__c = false
+            );
+        }
+        
+        upsert access;
+    }
+
+    /**
+     * ─────────────────────────────────────────────────────────────────────────
+     * Toggle favorite status for a map
+     * ─────────────────────────────────────────────────────────────────────────
+     */
+    @AuraEnabled
+    public static Boolean toggleFavorite(Id mapId) {
+        Id currentUserId = UserInfo.getUserId();
+        
+        // Find or create access record
+        List<Map_User_Access__c> existing = [
+            SELECT Id, Is_Favorite__c
+            FROM Map_User_Access__c
+            WHERE User__c = :currentUserId AND Capability_Map__c = :mapId
+            LIMIT 1
+        ];
+        
+        Map_User_Access__c access;
+        Boolean newFavoriteStatus;
+        
+        if (!existing.isEmpty()) {
+            access = existing[0];
+            access.Is_Favorite__c = !access.Is_Favorite__c;
+            newFavoriteStatus = access.Is_Favorite__c;
+        } else {
+            access = new Map_User_Access__c(
+                User__c = currentUserId,
+                Capability_Map__c = mapId,
+                Last_Accessed__c = DateTime.now(),
+                Access_Count__c = 0,
+                Is_Favorite__c = true
+            );
+            newFavoriteStatus = true;
+        }
+        
+        upsert access;
+        return newFavoriteStatus;
     }
 }

@@ -1,62 +1,93 @@
 <template>
     <div class="project-selector">
-        <!-- Loading state -->
-        <template if:true={isLoading}>
-            <div class="loading-state">
-                <lightning-spinner alternative-text="Checking..." size="small"></lightning-spinner>
-            </div>
-        </template>
+        <!-- Collapsible Header -->
+        <div class="selector-header" onclick={toggleExpanded}>
+            <span class="expand-icon">{expandIcon}</span>
+            <span class="header-title">New Map</span>
+        </div>
         
-        <!-- Klient PSA Search Mode -->
-        <template if:true={showKlientSearch}>
-            <div class="selector-container">
-                <input type="text" 
-                       class="selector-input" 
-                       placeholder="Search for a Klient project..."
-                       value={searchTerm}
-                       onkeyup={handleSearchChange}
-                       onfocus={handleFocus}
-                       onblur={handleBlur}>
+        <!-- Collapsible Content -->
+        <template if:true={isExpanded}>
+            <div class="selector-content">
+                <!-- Loading state -->
+                <template if:true={isLoading}>
+                    <div class="loading-state">
+                        <lightning-spinner alternative-text="Loading..." size="small"></lightning-spinner>
+                    </div>
+                </template>
                 
-                <template if:true={isSearching}>
-                    <div class="spinner-container">
-                        <lightning-spinner alternative-text="Searching" size="small"></lightning-spinner>
+                <!-- Mode Toggle -->
+                <template if:true={showModeToggle}>
+                    <div class="mode-toggle">
+                        <button class={projectModeClass} data-mode="project" onclick={handleModeChange}>
+                            <span class="mode-icon">📁</span>
+                            <span class="mode-label">Link to Project</span>
+                        </button>
+                        <button class={standaloneModeClass} data-mode="standalone" onclick={handleModeChange}>
+                            <span class="mode-icon">📝</span>
+                            <span class="mode-label">Customer Name</span>
+                        </button>
+                    </div>
+                </template>
+                
+                <!-- Klient PSA Search -->
+                <template if:true={showKlientSearch}>
+                    <div class="input-group">
+                        <label class="input-label">Search Project</label>
+                        <div class="search-container">
+                            <input type="text" 
+                                   class="selector-input" 
+                                   placeholder="Type to search..."
+                                   value={searchTerm}
+                                   onkeyup={handleSearchChange}
+                                   onfocus={handleFocus}
+                                   onblur={handleBlur}>
+                            
+                            <template if:true={isSearching}>
+                                <div class="spinner-container">
+                                    <lightning-spinner alternative-text="Searching" size="small"></lightning-spinner>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- Standalone Mode -->
+                <template if:true={showStandaloneInput}>
+                    <div class="input-group">
+                        <label class="input-label">Customer / Map Name</label>
+                        <input type="text" 
+                               class="selector-input" 
+                               placeholder="Enter name..."
+                               value={standaloneMapName}
+                               onchange={handleStandaloneNameChange}
+                               onkeyup={handleStandaloneKeyUp}>
+                        <button class="create-btn" onclick={handleCreateStandaloneMap}>
+                            Create Map
+                        </button>
                     </div>
                 </template>
             </div>
-            
-            <template if:true={showDropdown}>
-                <div class="dropdown">
-                    <template if:true={hasProjects}>
-                        <template for:each={projects} for:item="project">
-                            <div key={project.Id} class="dropdown-item" data-id={project.Id} onclick={handleProjectSelect}>
-                                <span class="project-icon">📁</span>
-                                <div class="project-info">
-                                    <div class="project-name">{project.Name}</div>
-                                    <div class="project-status">{project.Krow__Project_Status__c}</div>
-                                </div>
-                            </div>
-                        </template>
-                    </template>
-                    <template if:false={hasProjects}>
-                        <div class="dropdown-empty">No projects found</div>
-                    </template>
-                </div>
-            </template>
-        </template>
-        
-        <!-- Standalone Mode (No Klient PSA) -->
-        <template if:true={showStandaloneInput}>
-            <div class="standalone-container">
-                <input type="text" 
-                       class="selector-input" 
-                       placeholder="Enter map name..."
-                       value={standaloneMapName}
-                       onchange={handleStandaloneNameChange}>
-                <button class="create-btn" onclick={handleCreateStandaloneMap}>
-                    Create Map
-                </button>
-            </div>
         </template>
     </div>
-</template>
+    
+    <!-- Dropdown rendered at body level with fixed positioning -->
+    <template if:true={showDropdown}>
+        <div class="dropdown" style={dropdownStyle}>
+            <template if:true={hasProjects}>
+                <template for:each={projects} for:item="project">
+                    <div key={project.Id} class="dropdown-item" data-id={project.Id} onclick={handleProjectSelect}>
+                        <span class="project-icon">📁</span>
+                        <div class="project-info">
+                            <div class="project-name">{project.Name}</div>
+                            <div class="project-status">{project.Krow__Project_Status__c}</div>
+                        </div>
+                    </div>
+                </template>
+            </template>
+            <template if:false={hasProjects}>
+                <div class="dropdown-empty">No projects found</div>
+            </template>
+        </div>
+    </template>
+</template> 
